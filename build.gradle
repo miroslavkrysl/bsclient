@@ -10,7 +10,7 @@ jlink {
     }
 }
 
-group 'cz.cz.zcu.kiv.krysl'
+group 'cz.zcu.kiv.krysl'
 version '0.1.0'
 
 sourceCompatibility = 11
@@ -20,7 +20,7 @@ javafx {
     modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
 
-mainClassName = 'cz.zcu.kiv.krysl.Main'
+mainClassName = 'cz.zcu.kiv.krysl.bsclient.App'
 
 repositories {
     mavenCentral()
