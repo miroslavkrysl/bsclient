@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import cz.zcu.kiv.krysl.bsclient.App;
+import cz.zcu.kiv.krysl.bsclient.Main;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -41,9 +41,9 @@ public class ConnectPane extends BorderPane {
     @FXML
     private ProgressIndicator connectProgress;
 
-    private final App app;
+    private final Main app;
 
-    public ConnectPane(App app) {
+    public ConnectPane(Main app) {
         this.app = app;
 
         FXMLLoader fxmlLoader = new FXMLLoader(getClass()
