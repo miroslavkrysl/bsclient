@@ -20,6 +20,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
 //        connectPane = new ConnectPane(this);
+
         Board board = new Board(10, 10);
         scene = new Scene(new BoardPane(board));
 

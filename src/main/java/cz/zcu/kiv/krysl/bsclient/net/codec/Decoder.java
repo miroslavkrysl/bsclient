@@ -2,6 +2,7 @@ package cz.zcu.kiv.krysl.bsclient.net.codec;
 
 import cz.zcu.kiv.krysl.bsclient.net.messages.Message;
 
+import java.io.ByteArrayInputStream;
 import java.util.*;
 
 /**
@@ -12,25 +13,23 @@ import java.util.*;
  */
 public class Decoder {
 
-    private Deserializer deserializer;
+    private MessageDeserializer deserializer;
 
-    private static final Byte TERMINATION = '\n';
-    private static final Byte ESCAPE = '\\';
     public List<byte[]> parts;
 
-    public Decoder(Deserializer deserializer) {
+    public Decoder(IDeserializer deserializer) {
         this.deserializer = deserializer;
         this.parts = new ArrayList<>();
     }
 
     /**
-     * Try to build first message from buffered stream parts.
+     * Try to decode first message from buffered stream parts.
      * Data belonging to following messages is preserved between calls.
      *
      * @return First message from the stream or null, if the message is not complete yet
      */
-    private Message buildMessage() {
-        int termPos = findTermination();
+    private Message decodeMessage() {
+        int termPos = findSeparator();
 
         if (termPos == -1) {
             // message is not complete yet
@@ -73,31 +72,34 @@ public class Decoder {
             }
         }
 
-        return deserializer.deserialize(messageData);
+        return deserializer.deserialize(new ByteArrayInputStream(messageData));
     }
 
     /**
-     * Find the message termination symbol in buffered message parts.
+     * Find the message separation symbol in buffered message parts.
      *
-     * @return Position of the first termination symbol occurrence or -1 if not present.
+     * @return Position of the first separation symbol occurrence or -1 if not present.
      */
-    private int findTermination() {
+    private int findSeparator() {
+        byte separator = Protocol.MESSAGE_END;
+        byte escape = Protocol.ESCAPE;
+
         int offset = 0;
-        boolean escape = false;
+        boolean isEscape = false;
 
         for (byte[] part : parts) {
             for (int i = 0; i < part.length; i++) {
-                if (escape) {
-                    escape = false;
+                if (isEscape) {
+                    isEscape = false;
                     continue;
                 }
 
-                if (part[i] == ESCAPE) {
-                    escape = true;
+                if (part[i] == escape) {
+                    isEscape = true;
                     continue;
                 }
 
-                if (part[i] == TERMINATION) {
+                if (part[i] == separator) {
                     return offset + i;
                 }
             }
@@ -107,19 +109,20 @@ public class Decoder {
     }
 
     /**
-     * Append data to the internal buffer and try to build a message (or more messages if possible).
+     * Append data to the internal buffer and try to decode a message (or more messages if possible)
+     * from the bytes stream.
      *
      * @param data Data segment to append into buffer.
      * @return All complete messages that can be constructed from buffer.
      *  Messages are sorted in the same order they were constructed.
      */
-    public List<Message> decode(byte[] data) {
+    public Message[] decode(byte[] data) {
         parts.add(data);
 
-        List<Message> messages = null;
+        ArrayList<Message> messages = null;
 
         while (!parts.isEmpty()) {
-            Message msg = buildMessage();
+            Message msg = decodeMessage();
 
             if (msg == null) {
                 break;
@@ -132,6 +135,6 @@ public class Decoder {
             messages.add(msg);
         }
 
-        return messages;
+        return (messages != null ? (Message[]) messages.toArray() : null);
     }
 }
