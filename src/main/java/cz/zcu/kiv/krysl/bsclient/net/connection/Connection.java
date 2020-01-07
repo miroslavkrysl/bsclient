@@ -7,15 +7,15 @@ import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class Connection implements IConnectionLossHandler {
+public class Connection<MessageIn, MessageOut> implements IConnectionLossHandler {
     private static final int MESSAGE_QUEUE_CAPACITY = 100;
 
     private IConnectionLossHandler connectionLossHandler;
 
-    private final LinkedBlockingQueue<IMessage> incomingQueue;
-    private final LinkedBlockingQueue<IMessage> outgoingQueue;
-    private Receiver receiver;
-    private Sender sender;
+    private final LinkedBlockingQueue<MessageIn> incomingQueue;
+    private final LinkedBlockingQueue<MessageOut> outgoingQueue;
+    private Receiver<MessageIn> receiver;
+    private Sender<MessageOut> sender;
     private Socket socket;
 
     /**
@@ -28,7 +28,7 @@ public class Connection implements IConnectionLossHandler {
      * @throws IOException When error occurs during creating the socket connection.
      */
     public Connection(InetSocketAddress serverAddress,
-                      ICodec codec,
+                      ICodec<MessageIn, MessageOut> codec,
                       IConnectionLossHandler connectionLossHandler) throws IOException {
         this.connectionLossHandler = connectionLossHandler;
 
@@ -39,17 +39,17 @@ public class Connection implements IConnectionLossHandler {
         this.socket.connect(serverAddress);
         this.socket.setTcpNoDelay(true);
 
-        this.receiver = new Receiver(socket.getInputStream(), codec.newDeserializer(), incomingQueue, this);
+        this.receiver = new Receiver<>(socket.getInputStream(), codec.newDeserializer(), incomingQueue, this);
         this.receiver.setDaemon(false);
         this.receiver.start();
 
-        this.sender = new Sender(socket.getOutputStream(), codec.newSerializer(), outgoingQueue);
+        this.sender = new Sender<>(socket.getOutputStream(), codec.newSerializer(), outgoingQueue);
         this.sender.setDaemon(false);
         this.sender.start();
     }
 
     /**
-     * Closes connection and cancels and joins all its worker threads.
+     * Closes connection and cancels its worker threads.
      */
     public void close()  {
         this.receiver.cancel();
@@ -59,25 +59,6 @@ public class Connection implements IConnectionLossHandler {
             this.socket.close();
         } catch (IOException e) {
             // we don't care about the error.
-        }
-
-        // join worker threads
-        while (true) {
-            try {
-                this.receiver.join();
-                break;
-            } catch (InterruptedException e) {
-                // do nothing, just try to join again
-            }
-        }
-
-        while (true) {
-            try {
-                this.sender.join();
-                break;
-            } catch (InterruptedException e) {
-                // do nothing, just try to join again
-            }
         }
     }
 
@@ -100,7 +81,8 @@ public class Connection implements IConnectionLossHandler {
      * @return True or false if timeout happens.
      * @throws InterruptedException If the thread was interrupted while waiting.
      */
-    public boolean send(IMessage message, Duration timeout) throws InterruptedException {
+    public boolean send(MessageOut message, Duration timeout) throws InterruptedException {
+        // TODO: handle case when not connected or disconnected during the call.
         return outgoingQueue.offer(message, timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
@@ -112,7 +94,8 @@ public class Connection implements IConnectionLossHandler {
      * @return A message or null if timeout happens.
      * @throws InterruptedException If the thread was interrupted while waiting for a message.
      */
-    public IMessage receive(Duration timeout) throws InterruptedException {
+    public MessageIn receive(Duration timeout) throws InterruptedException {
+        // TODO: handle case when not connected or disconnected during the call.
         return incomingQueue.poll(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 

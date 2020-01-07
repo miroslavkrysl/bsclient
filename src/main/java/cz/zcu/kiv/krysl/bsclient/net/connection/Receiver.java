@@ -13,15 +13,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * which are then pushed to the provided incoming queue.
  * run() method must be called to start the receiving thread.
  */
-public class Receiver extends Thread {
+public class Receiver<MessageIn> extends Thread {
     private static final int BUFFER_SIZE = 1024;
 
     private final byte[] buffer;
     private InputStream stream;
-    private IDeserializer deserializer;
+    private IDeserializer<MessageIn> deserializer;
     private IConnectionLossHandler connectionLossHandler;
     private AtomicBoolean keepRunning;
-    private BlockingQueue<IMessage> incomingQueue;
+    private BlockingQueue<MessageIn> incomingQueue;
 
     /**
      * Create the receiver.
@@ -32,8 +32,8 @@ public class Receiver extends Thread {
      * @param connectionLossHandler The handler which will be called when the connection loss occurs.
      */
     public Receiver(InputStream stream,
-                    IDeserializer deserializer,
-                    BlockingQueue<IMessage> incomingQueue,
+                    IDeserializer<MessageIn> deserializer,
+                    BlockingQueue<MessageIn> incomingQueue,
                     IConnectionLossHandler connectionLossHandler) {
         super("Receiver");
         this.stream = stream;
@@ -70,9 +70,9 @@ public class Receiver extends Thread {
 
                 try {
                     // process incoming data
-                    IMessage[] messages = deserializer.deserialize(Arrays.copyOfRange(buffer, 0, bytesRead));
+                    MessageIn[] messages = deserializer.deserialize(Arrays.copyOfRange(buffer, 0, bytesRead));
 
-                    for (IMessage message : messages) {
+                    for (MessageIn message : messages) {
                         incomingQueue.offer(message);
                     }
                 } catch (IOException e) {

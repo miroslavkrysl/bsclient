@@ -5,12 +5,12 @@ import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Sender extends Thread {
+public class Sender<MessageOut> extends Thread {
 
     private OutputStream stream;
-    private ISerializer serializer;
+    private ISerializer<MessageOut> serializer;
     private AtomicBoolean keepRunning;
-    private BlockingQueue<IMessage> outgoingQueue;
+    private BlockingQueue<MessageOut> outgoingQueue;
 
     /**
      * Create the receiver.
@@ -20,8 +20,8 @@ public class Sender extends Thread {
      * @param outgoingQueue The queue to take messages to be sent from.
      */
     public Sender(OutputStream stream,
-                    ISerializer serializer,
-                    BlockingQueue<IMessage> outgoingQueue) {
+                    ISerializer<MessageOut> serializer,
+                    BlockingQueue<MessageOut> outgoingQueue) {
         super("Sender");
         this.stream = stream;
         this.serializer = serializer;
@@ -47,7 +47,7 @@ public class Sender extends Thread {
     public void run() {
         while (keepRunning.get()) {
             try {
-                IMessage message = outgoingQueue.take();
+                MessageOut message = outgoingQueue.take();
                 byte[] serialized = serializer.serialize(message);
                 stream.write(serialized);
 
