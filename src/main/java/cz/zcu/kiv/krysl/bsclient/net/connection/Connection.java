@@ -1,7 +1,5 @@
 package cz.zcu.kiv.krysl.bsclient.net.connection;
 
-import cz.zcu.kiv.krysl.bsclient.net.IMessage;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -16,7 +14,6 @@ public class Connection implements IConnectionLossHandler {
 
     private final LinkedBlockingQueue<IMessage> incomingQueue;
     private final LinkedBlockingQueue<IMessage> outgoingQueue;
-    private Supervisor supervisor;
     private Receiver receiver;
     private Sender sender;
     private Socket socket;

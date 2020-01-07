@@ -3,6 +3,7 @@ package cz.zcu.kiv.krysl.bsclient.net;
 import cz.zcu.kiv.krysl.bsclient.game.Position;
 import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
 import cz.zcu.kiv.krysl.bsclient.net.connection.ConnectionLossCause;
+import cz.zcu.kiv.krysl.bsclient.net.connection.IMessage;
 import cz.zcu.kiv.krysl.bsclient.net.results.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.Layout;
 

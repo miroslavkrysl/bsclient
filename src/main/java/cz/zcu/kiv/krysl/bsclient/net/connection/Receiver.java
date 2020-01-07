@@ -1,8 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.connection;
 
 
-import cz.zcu.kiv.krysl.bsclient.net.IMessage;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
