@@ -11,7 +11,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Thread responsible for receiving messages from server.
- * run() method must be called in order to start the thread.
+ * Continuously reads from the stream and deserializes incoming message
+ * which are then pushed to the provided incoming queue.
+ * run() method must be called to start the receiving thread.
  */
 public class Receiver extends Thread {
     private static final int BUFFER_SIZE = 1024;
@@ -19,25 +21,33 @@ public class Receiver extends Thread {
     private final byte[] buffer;
     private InputStream stream;
     private IDeserializer deserializer;
-    private ISocketClosedHandler socketClosedHandler;
+    private IConnectionLossHandler connectionLossHandler;
     private AtomicBoolean keepRunning;
     private BlockingQueue<IMessage> incomingQueue;
 
+    /**
+     * Create the receiver.
+     *
+     * @param stream The stream to read from.
+     * @param deserializer The deserializer used for message deserialization.
+     * @param incomingQueue The queue to push received messages into.
+     * @param connectionLossHandler The handler which will be called when the connection loss occurs.
+     */
     public Receiver(InputStream stream,
                     IDeserializer deserializer,
                     BlockingQueue<IMessage> incomingQueue,
-                    ISocketClosedHandler socketClosedHandler) {
+                    IConnectionLossHandler connectionLossHandler) {
         super("Receiver");
         this.stream = stream;
         this.deserializer = deserializer;
         this.incomingQueue = incomingQueue;
-        this.socketClosedHandler = socketClosedHandler;
+        this.connectionLossHandler = connectionLossHandler;
         this.buffer = new byte[BUFFER_SIZE];
         this.keepRunning = new AtomicBoolean(true);
     }
 
     /**
-     * Request receiver thread to stop.
+     * Request the receiver thread to stop.
      * Sets keepRunning flag to false.
      * Associated stream should be closed too to stop the blocking read call.
      */
@@ -46,7 +56,7 @@ public class Receiver extends Thread {
     }
 
     /**
-     * Execute the reading. It runs in a separate thread.
+     * Run the receiving logic. It runs in a separate thread.
      */
     @Override
     public void run() {
@@ -57,19 +67,33 @@ public class Receiver extends Thread {
 
                 if (bytesRead <= 0) {
                     // stream closed
-                    keepRunning.set(false);
-                    continue;
+                    break;
                 }
 
-                IMessage[] messages = deserializer.deserialize(Arrays.copyOfRange(buffer, 0, bytesRead));
+                try {
+                    // process incoming data
+                    IMessage[] messages = deserializer.deserialize(Arrays.copyOfRange(buffer, 0, bytesRead));
 
-                for (IMessage message : messages) {
-                    incomingQueue.offer(message);
+                    for (IMessage message : messages) {
+                        incomingQueue.offer(message);
+                    }
+                } catch (IOException e) {
+                    // stream corrupted
+                    // notify upper layer
+                    connectionLossHandler.handleConnectionLoss(ConnectionLossCause.CORRUPTED);
+                    keepRunning.set(false);
+                    break;
                 }
             } catch (IOException e) {
                 // stream closed
-                keepRunning.set(false);
+                break;
             }
+        }
+
+        if (keepRunning.get()) {
+            // unwanted connection loss
+            // notify upper layer
+            connectionLossHandler.handleConnectionLoss(ConnectionLossCause.CLOSED);
         }
     }
 }

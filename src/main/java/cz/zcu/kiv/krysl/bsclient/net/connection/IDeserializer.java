@@ -2,6 +2,8 @@ package cz.zcu.kiv.krysl.bsclient.net.connection;
 
 import cz.zcu.kiv.krysl.bsclient.net.IMessage;
 
+import java.io.IOException;
+
 public interface IDeserializer {
     /**
      * Append bytes into internal buffer and deserialize all available messages.
@@ -9,5 +11,5 @@ public interface IDeserializer {
      * @param bytes Data to append into internal buffer.
      * @return All available messages. It could be empty.
      */
-    IMessage[] deserialize(byte[] bytes);
+    IMessage[] deserialize(byte[] bytes) throws IOException;
 }

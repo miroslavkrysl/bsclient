@@ -1,7 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.connection;
 
 import cz.zcu.kiv.krysl.bsclient.net.IMessage;
-import cz.zcu.kiv.krysl.bsclient.net.NotConnectedException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -10,12 +9,12 @@ import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class Connection implements ISocketClosedHandler {
+public class Connection implements IConnectionLossHandler {
     private static final int MESSAGE_QUEUE_CAPACITY = 100;
 
     private InetSocketAddress serverAddress;
     private ICodec codec;
-    private IConnectionEventHandler connectionManager;
+    private IConnectionLossHandler connectionLossHandler;
 
     private final LinkedBlockingQueue<IMessage> incomingQueue;
     private final LinkedBlockingQueue<IMessage> outgoingQueue;
@@ -24,25 +23,25 @@ public class Connection implements ISocketClosedHandler {
     private Sender sender;
     private Socket socket;
 
+    /**
+     * Create connection to the server.
+     * Creates and sets up a socket and starts sender and receiver threads.
+     *
+     * @param serverAddress The address of the server.
+     * @param codec The codec used for stream serialization and deserialization into messages.
+     * @param connectionLossHandler The handler which will be called when the connection loss occurs.
+     * @throws IOException When error occurs during creating the socket connection.
+     */
     public Connection(InetSocketAddress serverAddress,
                       ICodec codec,
-                      IConnectionEventHandler connectionManager) throws IOException {
+                      IConnectionLossHandler connectionLossHandler) throws IOException {
         this.serverAddress = serverAddress;
         this.codec = codec;
-        this.connectionManager = connectionManager;
+        this.connectionLossHandler = connectionLossHandler;
 
         this.incomingQueue = new LinkedBlockingQueue<>(MESSAGE_QUEUE_CAPACITY);
         this.outgoingQueue = new LinkedBlockingQueue<>(MESSAGE_QUEUE_CAPACITY);
 
-        connect();
-    }
-
-    public void reconnect() throws IOException {
-        close();
-        connect();
-    }
-
-    private void connect() throws IOException {
         this.socket = new Socket();
         this.socket.connect(serverAddress);
         this.socket.setTcpNoDelay(true);
@@ -51,7 +50,7 @@ public class Connection implements ISocketClosedHandler {
         this.receiver.setDaemon(false);
         this.receiver.start();
 
-        this.sender = new Sender(socket.getOutputStream(), codec.newSerializer(), outgoingQueue, this);
+        this.sender = new Sender(socket.getOutputStream(), codec.newSerializer(), outgoingQueue);
         this.sender.setDaemon(false);
         this.sender.start();
     }
@@ -59,10 +58,15 @@ public class Connection implements ISocketClosedHandler {
     /**
      * Closes connection and cancels and joins all its worker threads.
      */
-    public void close() throws IOException {
+    public void close()  {
         this.receiver.cancel();
         this.sender.cancel();
-        this.socket.close();
+
+        try {
+            this.socket.close();
+        } catch (IOException e) {
+            // we don't care about the error.
+        }
 
         // join worker threads
         while (true) {
@@ -84,6 +88,11 @@ public class Connection implements ISocketClosedHandler {
         }
     }
 
+    /**
+     * Check whether is the connection alive.
+     *
+     * @return True if connected, false otherwise.
+     */
     public boolean isConnected() {
         return this.socket.isConnected();
     }
@@ -117,7 +126,9 @@ public class Connection implements ISocketClosedHandler {
     // --- ISocketClosedHandler ---
 
     @Override
-    synchronized public void handleSocketClosed(SocketCloseCause cause) {
+    synchronized public void handleConnectionLoss(ConnectionLossCause cause) {
         close();
+        // notify upper layer about the connection loss
+        connectionLossHandler.handleConnectionLoss(cause);
     }
 }

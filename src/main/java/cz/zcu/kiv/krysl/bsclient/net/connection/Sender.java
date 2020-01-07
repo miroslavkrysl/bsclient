@@ -11,33 +11,39 @@ public class Sender extends Thread {
 
     private OutputStream stream;
     private ISerializer serializer;
-    private IConnectionEventHandler connectionManager;
     private AtomicBoolean keepRunning;
     private BlockingQueue<IMessage> outgoingQueue;
 
+    /**
+     * Create the receiver.
+     *
+     * @param stream The stream to write into.
+     * @param serializer The serializer used for message serialization.
+     * @param outgoingQueue The queue to take messages to be sent from.
+     */
     public Sender(OutputStream stream,
                     ISerializer serializer,
-                    BlockingQueue<IMessage> outgoingQueue,
-                    ISocketClosedHandler socketClosedHandler) {
+                    BlockingQueue<IMessage> outgoingQueue) {
         super("Sender");
         this.stream = stream;
         this.serializer = serializer;
         this.outgoingQueue = outgoingQueue;
-        this.connectionManager = connectionManager;
         this.keepRunning = new AtomicBoolean(true);
     }
+
     /**
-     * Request receiver thread to stop.
+     * Request the sender thread to stop.
      * Sets keepRunning flag to false.
      * Associated stream should be closed too to stop the blocking write call.
      */
     public void cancel() {
         this.keepRunning.set(false);
+        // interrupt blocking take() call on outgoingQueue
         this.interrupt();
     }
 
     /**
-     * Execute the writing. It runs in a separate thread.
+     * Run the sending logic. It runs in a separate thread.
      */
     @Override
     public void run() {
@@ -50,7 +56,7 @@ public class Sender extends Thread {
                 int bytesWritten = serialized.length;
             } catch (IOException e) {
                 // stream closed
-                keepRunning.set(false);
+                break;
             } catch (InterruptedException e) {
                 // interrupted from the blocking queue take() call;
             }

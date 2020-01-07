@@ -2,6 +2,7 @@ package cz.zcu.kiv.krysl.bsclient.net;
 
 import cz.zcu.kiv.krysl.bsclient.game.Position;
 import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
+import cz.zcu.kiv.krysl.bsclient.net.connection.ConnectionLossCause;
 import cz.zcu.kiv.krysl.bsclient.net.connection.IConnectionEventHandler;
 import cz.zcu.kiv.krysl.bsclient.net.results.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.Layout;
@@ -28,12 +29,12 @@ public class Client implements IConnectionEventHandler {
         this.eventHandler = eventHandler;
     }
 
-    public ConnectResult connect() throws AlreadyConnectedException, IOException {
+    synchronized public ConnectResult connect() throws AlreadyConnectedException, IOException {
         if (isConnected()) {
             throw new AlreadyConnectedException();
         }
 
-        connection = new Connection(serverAddress, new BsCodec(), );
+        connection = new Connection(serverAddress, new BsCodec(), this);
 
         // TODO
 
@@ -41,35 +42,51 @@ public class Client implements IConnectionEventHandler {
         return null;
     }
 
-    private boolean isConnected() {
+    synchronized private boolean isConnected() {
         return connection != null && !connection.isConnected();
     }
 
-    public DisconnectResult disconnect() throws NotConnectedException {
+    synchronized public DisconnectResult disconnect() throws NotConnectedException {
         if (!isConnected()) {
-            throw new NotConnectedException();
+            throw new NotConnectedException("Client must be connected to perform disconnect.");
         }
 
         // TODO
         return null;
     }
 
-    public JoinGameResult joinGame() {
+    synchronized public JoinGameResult joinGame() throws NotConnectedException {
+        if (!isConnected()) {
+            throw new NotConnectedException("Client must be connected to perform joinGame.");
+        }
+
         // TODO
         return null;
     }
 
-    public LeaveGameResult leaveGame() {
+    synchronized public LeaveGameResult leaveGame() throws NotConnectedException {
+        if (!isConnected()) {
+            throw new NotConnectedException("Client must be connected to perform leaveGame.");
+        }
+
         // TODO
         return null;
     }
 
-    public ChooseLayoutResult chooseLayout(Layout layout) {
+    synchronized public ChooseLayoutResult chooseLayout(Layout layout) throws NotConnectedException {
+        if (!isConnected()) {
+            throw new NotConnectedException("Client must be connected to perform chooseLayout.");
+        }
+
         // TODO
         return null;
     }
 
-    public ShootResult shoot(Position position) {
+    synchronized public ShootResult shoot(Position position) throws NotConnectedException {
+        if (!isConnected()) {
+            throw new NotConnectedException("Client must be connected to perform shoot.");
+        }
+
         // TODO
         return null;
     }
@@ -88,7 +105,7 @@ public class Client implements IConnectionEventHandler {
     }
 
     @Override
-    public void handleConnectionClosed(ConnectionCloseCause cause) {
+    public void handleConnectionClosed(ConnectionLossCause cause) {
         eventHandler.handleConnectionClosed(cause);
     }
 }
