@@ -12,8 +12,6 @@ import java.util.concurrent.TimeUnit;
 public class Connection implements IConnectionLossHandler {
     private static final int MESSAGE_QUEUE_CAPACITY = 100;
 
-    private InetSocketAddress serverAddress;
-    private ICodec codec;
     private IConnectionLossHandler connectionLossHandler;
 
     private final LinkedBlockingQueue<IMessage> incomingQueue;
@@ -35,8 +33,6 @@ public class Connection implements IConnectionLossHandler {
     public Connection(InetSocketAddress serverAddress,
                       ICodec codec,
                       IConnectionLossHandler connectionLossHandler) throws IOException {
-        this.serverAddress = serverAddress;
-        this.codec = codec;
         this.connectionLossHandler = connectionLossHandler;
 
         this.incomingQueue = new LinkedBlockingQueue<>(MESSAGE_QUEUE_CAPACITY);
