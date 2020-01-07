@@ -5,6 +5,12 @@ import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Thread responsible for sending messages to the remote point.
+ * Continuously serializes available outgoing messages
+ * which are then written into to the output stream.
+ * run() method must be called to start the sending thread.
+ */
 public class Sender<MessageOut> extends Thread {
 
     private OutputStream stream;
@@ -13,7 +19,7 @@ public class Sender<MessageOut> extends Thread {
     private BlockingQueue<MessageOut> outgoingQueue;
 
     /**
-     * Create the receiver.
+     * Create the sender.
      *
      * @param stream The stream to write into.
      * @param serializer The serializer used for message serialization.

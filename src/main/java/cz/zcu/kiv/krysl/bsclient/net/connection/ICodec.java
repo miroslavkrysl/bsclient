@@ -1,7 +1,10 @@
 package cz.zcu.kiv.krysl.bsclient.net.connection;
 
 /**
- * Class represents a serialization and deserialization logic.
+ * Class that represents a serialization and deserialization logic.
+ *
+ * @param <MessageIn> Incoming messages type.
+ * @param <MessageOut> Outgoing messages type.
  */
 public interface ICodec<MessageIn, MessageOut> {
     /**

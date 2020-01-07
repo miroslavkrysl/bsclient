@@ -4,41 +4,41 @@ package cz.zcu.kiv.krysl.bsclient.net.connection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Thread responsible for receiving messages from server.
- * Continuously reads from the stream and deserializes incoming message
+ * Thread responsible for receiving messages from the remote point.
+ * Continuously reads from the stream and deserializes incoming messages
  * which are then pushed to the provided incoming queue.
  * run() method must be called to start the receiving thread.
  */
 public class Receiver<MessageIn> extends Thread {
     private static final int BUFFER_SIZE = 1024;
 
-    private final byte[] buffer;
     private InputStream stream;
     private IDeserializer<MessageIn> deserializer;
+    private IIncomingMessageHandler<MessageIn> messageHandler;
     private IConnectionLossHandler connectionLossHandler;
+
+    private final byte[] buffer;
     private AtomicBoolean keepRunning;
-    private BlockingQueue<MessageIn> incomingQueue;
 
     /**
      * Create the receiver.
      *
      * @param stream The stream to read from.
      * @param deserializer The deserializer used for message deserialization.
-     * @param incomingQueue The queue to push received messages into.
+     * @param messageHandler The handler which will be called when a new message is received.
      * @param connectionLossHandler The handler which will be called when the connection loss occurs.
      */
     public Receiver(InputStream stream,
                     IDeserializer<MessageIn> deserializer,
-                    BlockingQueue<MessageIn> incomingQueue,
+                    IIncomingMessageHandler<MessageIn> messageHandler,
                     IConnectionLossHandler connectionLossHandler) {
         super("Receiver");
         this.stream = stream;
         this.deserializer = deserializer;
-        this.incomingQueue = incomingQueue;
+        this.messageHandler = messageHandler;
         this.connectionLossHandler = connectionLossHandler;
         this.buffer = new byte[BUFFER_SIZE];
         this.keepRunning = new AtomicBoolean(true);
@@ -51,6 +51,8 @@ public class Receiver<MessageIn> extends Thread {
      */
     public void cancel() {
         this.keepRunning.set(false);
+        // interrupt blocking handleIncomingMessage call on messageHandler
+        this.interrupt();
     }
 
     /**
@@ -73,7 +75,7 @@ public class Receiver<MessageIn> extends Thread {
                     MessageIn[] messages = deserializer.deserialize(Arrays.copyOfRange(buffer, 0, bytesRead));
 
                     for (MessageIn message : messages) {
-                        incomingQueue.offer(message);
+                        messageHandler.handleIncomingMessage(message);
                     }
                 } catch (IOException e) {
                     // stream corrupted
@@ -85,6 +87,8 @@ public class Receiver<MessageIn> extends Thread {
             } catch (IOException e) {
                 // stream closed
                 break;
+            } catch (InterruptedException e) {
+                // a blocking call on messageHandler was interrupted
             }
         }
 

@@ -3,7 +3,6 @@ package cz.zcu.kiv.krysl.bsclient.net;
 import cz.zcu.kiv.krysl.bsclient.game.Position;
 import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
 import cz.zcu.kiv.krysl.bsclient.net.connection.ConnectionLossCause;
-import cz.zcu.kiv.krysl.bsclient.net.connection.IMessage;
 import cz.zcu.kiv.krysl.bsclient.net.results.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.Layout;
 
@@ -46,45 +45,45 @@ public class Client implements IConnectionEventHandler {
         return connection != null && !connection.isConnected();
     }
 
-    synchronized public DisconnectResult disconnect() throws NotConnectedException {
+    synchronized public DisconnectResult disconnect() throws DisconnectedException {
         if (!isConnected()) {
-            throw new NotConnectedException("Client must be connected to perform disconnect.");
+            throw new DisconnectedException("Client must be connected to perform disconnect.");
         }
 
         // TODO
         return null;
     }
 
-    synchronized public JoinGameResult joinGame() throws NotConnectedException {
+    synchronized public JoinGameResult joinGame() throws DisconnectedException {
         if (!isConnected()) {
-            throw new NotConnectedException("Client must be connected to perform joinGame.");
+            throw new DisconnectedException("Client must be connected to perform joinGame.");
         }
 
         // TODO
         return null;
     }
 
-    synchronized public LeaveGameResult leaveGame() throws NotConnectedException {
+    synchronized public LeaveGameResult leaveGame() throws DisconnectedException {
         if (!isConnected()) {
-            throw new NotConnectedException("Client must be connected to perform leaveGame.");
+            throw new DisconnectedException("Client must be connected to perform leaveGame.");
         }
 
         // TODO
         return null;
     }
 
-    synchronized public ChooseLayoutResult chooseLayout(Layout layout) throws NotConnectedException {
+    synchronized public ChooseLayoutResult chooseLayout(Layout layout) throws DisconnectedException {
         if (!isConnected()) {
-            throw new NotConnectedException("Client must be connected to perform chooseLayout.");
+            throw new DisconnectedException("Client must be connected to perform chooseLayout.");
         }
 
         // TODO
         return null;
     }
 
-    synchronized public ShootResult shoot(Position position) throws NotConnectedException {
+    synchronized public ShootResult shoot(Position position) throws DisconnectedException {
         if (!isConnected()) {
-            throw new NotConnectedException("Client must be connected to perform shoot.");
+            throw new DisconnectedException("Client must be connected to perform shoot.");
         }
 
         // TODO
