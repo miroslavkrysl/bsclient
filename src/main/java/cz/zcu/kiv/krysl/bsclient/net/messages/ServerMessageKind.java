@@ -1,7 +1,7 @@
-package cz.zcu.kiv.krysl.bsclient.net;
+package cz.zcu.kiv.krysl.bsclient.net.messages;
 
 public enum ServerMessageKind {
-    ALIVE,
+    ILLEGAL_STATE,
 
     HANDSHAKE_OK,
     HANDSHAKE_FAIL,
@@ -14,7 +14,6 @@ public enum ServerMessageKind {
 
     JOIN_GAME_WAIT,
     JOIN_GAME_JOINED,
-    JOIN_GAME_FAIL,
 
     LAYOUT_OK,
     LAYOUT_FAIL,
@@ -23,8 +22,13 @@ public enum ServerMessageKind {
     SHOOT_FAIL,
 
     LEAVE_GAME_OK,
-    LEAVE_GAME_FAIL,
 
     DISCONNECT_OK,
-    DISCONNECT_FAIL
+
+    DISCONNECT,
+    OPPONENT_READY,
+    OPPONENT_LEFT,
+    OPPONENT_MISSED,
+    OPPONENT_HIT,
+    GAME_OVER
 }
