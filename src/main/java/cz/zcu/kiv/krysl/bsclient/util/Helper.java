@@ -1,9 +1,10 @@
 package cz.zcu.kiv.krysl.bsclient.util;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Helper {
-    public static String[] splitString(String string, char separator, char escape) {
+    public static List<String> splitString(String string, char separator, char escape) {
         ArrayList<String> tokens = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
 
@@ -25,7 +26,7 @@ public class Helper {
 
         tokens.add(sb.toString());
 
-        return tokens.toArray(new String[0]);
+        return tokens;
     }
 
     public static String unescape(String string, char escape) {
