@@ -54,9 +54,7 @@ public class Helper {
                         sb.append(escape);
                     }
                 }
-            }
-
-            if (c == escape) {
+            } else if (c == escape) {
                 isEscape = true;
                 continue;
             }
