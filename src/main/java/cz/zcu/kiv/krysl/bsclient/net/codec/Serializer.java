@@ -9,8 +9,8 @@ import java.nio.charset.Charset;
 
 public class Serializer implements ISerializer<Message> {
 
-    private static final String CHARS_TO_ESCAPE = String.valueOf(CodecConstants.MESSAGE_END);
-    private static final String MESSAGE_END = String.valueOf(CodecConstants.MESSAGE_END);
+    private static final String CHARS_TO_ESCAPE = String.valueOf(Codec.MESSAGE_END);
+    private static final String MESSAGE_END = String.valueOf(Codec.MESSAGE_END);
 
     private Charset encoding;
 
@@ -26,7 +26,7 @@ public class Serializer implements ISerializer<Message> {
         String messageString = messageSerializer.serialize();
 
         // escape message end char
-        messageString = Helper.escapeChars(messageString, CHARS_TO_ESCAPE, CodecConstants.ESCAPE);
+        messageString = Helper.escapeChars(messageString, CHARS_TO_ESCAPE, Codec.ESCAPE);
 
         serialized.writeBytes(encoding.encode(messageString).array());
         serialized.writeBytes(encoding.encode(MESSAGE_END).array());
