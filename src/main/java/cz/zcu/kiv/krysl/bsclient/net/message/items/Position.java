@@ -1,5 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.net.message.items;
 
+import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
+import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadDeserializer;
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadSerializer;
 
 public class Position implements ISerializableItem {
@@ -31,5 +33,13 @@ public class Position implements ISerializableItem {
     public void serialize(PayloadSerializer serializer) {
         serializer.addInt(row);
         serializer.addInt(col);
+    }
+
+    public static Position deserialize(PayloadDeserializer deserializer) throws DeserializeException {
+        try {
+            return new Position(deserializer.getInt(), deserializer.getInt());
+        } catch (IllegalArgumentException e) {
+            throw new DeserializeException("Can't deserialize position from payload: " + e);
+        }
     }
 }

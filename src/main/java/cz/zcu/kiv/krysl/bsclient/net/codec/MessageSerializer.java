@@ -1,10 +1,10 @@
 package cz.zcu.kiv.krysl.bsclient.net.codec;
 
-import cz.zcu.kiv.krysl.bsclient.net.message.ClientMessageKind;
+import cz.zcu.kiv.krysl.bsclient.net.message.client.ClientMessageKind;
 
 public class MessageSerializer {
-    private PayloadSerializer payloadSerializer;
     private ClientMessageKind kind;
+    private PayloadSerializer payloadSerializer;
 
     public MessageSerializer(ClientMessageKind kind) {
         this.kind = kind;
@@ -33,12 +33,6 @@ public class MessageSerializer {
         String header;
 
         switch (kind) {
-            case ALIVE:
-                header = "alive";
-                break;
-            case HANDSHAKE:
-                header = "handshake";
-                break;
             case RECONNECT:
                 header = "reconnect";
                 break;

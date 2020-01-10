@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class PayloadSerializer {
-    private static final String CHARS_TO_ESCAPE = String.valueOf(Constants.PAYLOAD_ITEM_SEPARATOR);
+    private static final String CHARS_TO_ESCAPE = "" + Constants.PAYLOAD_ITEM_SEPARATOR + Constants.ESCAPE;
 
     private List<String> items;
 
@@ -29,6 +29,10 @@ public class PayloadSerializer {
     }
 
     public String serialize() {
+        if (items.isEmpty()) {
+            return null;
+        }
+
         StringBuilder serialized = new StringBuilder();
 
         Iterator<String> iterator = items.iterator();

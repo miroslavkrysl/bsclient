@@ -1,5 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.net.message.items;
 
+import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
+import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadDeserializer;
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadSerializer;
 
 public class SessionKey implements ISerializableItem{
@@ -24,5 +26,13 @@ public class SessionKey implements ISerializableItem{
     @Override
     public void serialize(PayloadSerializer serializer) {
         serializer.addString(key);
+    }
+
+    public static SessionKey deserialize(PayloadDeserializer deserializer) throws DeserializeException {
+        try {
+            return new SessionKey(deserializer.getString());
+        } catch (IllegalArgumentException e) {
+            throw new DeserializeException("Can't deserialize session key from payload: " + e);
+        }
     }
 }

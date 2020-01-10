@@ -2,7 +2,7 @@ package cz.zcu.kiv.krysl.bsclient.net.codec;
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.connection.IDeserializer;
-import cz.zcu.kiv.krysl.bsclient.net.message.Message;
+import cz.zcu.kiv.krysl.bsclient.net.message.server.ServerMessage;
 import cz.zcu.kiv.krysl.bsclient.util.Helper;
 
 import java.nio.ByteBuffer;
@@ -19,25 +19,25 @@ import java.util.*;
  * Every connection must have only one Decoder, because the decoder remembers all previous
  * stream segments until a Message is built.
  */
-public class Deserializer implements IDeserializer<Message> {
+public class Deserializer implements IDeserializer<ServerMessage> {
 
     private CharsetDecoder stringDecoder;
     private CharBuffer charBuffer;
     private StringBuilder stringBuffer;
-    private static final String CHARS_TO_ESCAPE = String.valueOf(Codec.MESSAGE_END);
+    private static final String CHARS_TO_ESCAPE = String.valueOf(Constants.MESSAGE_END);
 
     public Deserializer(Charset encoding) {
         this.stringDecoder = encoding.newDecoder();
         this.stringDecoder.onMalformedInput(CodingErrorAction.REPORT);
         this.stringDecoder.onUnmappableCharacter(CodingErrorAction.REPORT);
         this.charBuffer = CharBuffer.allocate(1024);
-        this.stringBuffer = new StringBuilder(Codec.MAX_MESSAGE_LENGTH * 2);
+        this.stringBuffer = new StringBuilder(Constants.MAX_MESSAGE_LENGTH * 2);
     }
 
     // --- IDeserializer
     @Override
-    public List<Message> deserialize(byte[] data) throws DeserializeException {
-        LinkedList<Message> messages = new LinkedList<>();
+    public List<ServerMessage> deserialize(byte[] data) throws DeserializeException {
+        LinkedList<ServerMessage> messages = new LinkedList<>();
 
         // decode bytes into string
         while(true) {
@@ -63,12 +63,12 @@ public class Deserializer implements IDeserializer<Message> {
         int offset = 0;
 
         while (true) {
-            int separatorPos = Helper.findChar(stringBuffer, offset, Codec.MESSAGE_END, Codec.ESCAPE);
+            int separatorPos = Helper.findChar(stringBuffer, offset, Constants.MESSAGE_END, Constants.ESCAPE);
 
             if (separatorPos == -1) {
                 // message is not complete yet
 
-                if ((stringBuffer.length() - offset) > Codec.MAX_MESSAGE_LENGTH) {
+                if ((stringBuffer.length() - offset) > Constants.MAX_MESSAGE_LENGTH) {
                     throw new DeserializeException("Too long stream segment to be a valid message.");
                 }
 
@@ -79,11 +79,10 @@ public class Deserializer implements IDeserializer<Message> {
             offset = separatorPos + 1;
 
             // unescape message end char
-            messageString = Helper.unescapeChars(messageString, CHARS_TO_ESCAPE, Codec.ESCAPE);
+            messageString = Helper.unescapeChars(messageString, CHARS_TO_ESCAPE, Constants.ESCAPE);
 
             // build message
-            MessageDeserializer messageDeserializer = new MessageDeserializer(messageString);
-            Message message = messageDeserializer.deserialize();
+            ServerMessage message = ServerMessage.deserialize(messageString);
 
             messages.add(message);
         }

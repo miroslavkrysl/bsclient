@@ -1,11 +1,10 @@
 package cz.zcu.kiv.krysl.bsclient.net.message.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadSerializer;
-import cz.zcu.kiv.krysl.bsclient.net.message.ClientMessageKind;
 import cz.zcu.kiv.krysl.bsclient.net.codec.MessageSerializer;
 
 public abstract class ClientMessage {
-    private ClientMessageKind kind;
+    private final ClientMessageKind kind;
 
     public ClientMessage(ClientMessageKind kind) {
         this.kind = kind;

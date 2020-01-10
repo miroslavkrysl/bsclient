@@ -6,5 +6,4 @@ public class Constants {
     public static final char MESSAGE_END = '\n';
     public static final char ESCAPE = '\\';
     public static final int MAX_MESSAGE_LENGTH = 1024;
-    public static final int CHAR_BUFFER_LENGTH = 2048;
 }

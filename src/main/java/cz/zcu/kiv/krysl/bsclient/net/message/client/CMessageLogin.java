@@ -1,7 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.message.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadSerializer;
-import cz.zcu.kiv.krysl.bsclient.net.message.ClientMessageKind;
 import cz.zcu.kiv.krysl.bsclient.net.message.items.Nickname;
 
 public class CMessageLogin extends ClientMessage {
