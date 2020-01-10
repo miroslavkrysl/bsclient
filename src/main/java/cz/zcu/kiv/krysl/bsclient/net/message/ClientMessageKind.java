@@ -1,6 +1,6 @@
-package cz.zcu.kiv.krysl.bsclient.net.messages;
+package cz.zcu.kiv.krysl.bsclient.net.message;
 
-public enum ClientMessageKind {
+public enum  ClientMessageKind {
     ALIVE,
     HANDSHAKE,
     RECONNECT,

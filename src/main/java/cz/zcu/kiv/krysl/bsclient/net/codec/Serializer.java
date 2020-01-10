@@ -1,16 +1,16 @@
 package cz.zcu.kiv.krysl.bsclient.net.codec;
 
 import cz.zcu.kiv.krysl.bsclient.net.connection.ISerializer;
-import cz.zcu.kiv.krysl.bsclient.net.message.Message;
+import cz.zcu.kiv.krysl.bsclient.net.message.client.ClientMessage;
 import cz.zcu.kiv.krysl.bsclient.util.Helper;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 
-public class Serializer implements ISerializer<Message> {
+public class Serializer implements ISerializer<ClientMessage> {
 
-    private static final String CHARS_TO_ESCAPE = String.valueOf(Codec.MESSAGE_END);
-    private static final String MESSAGE_END = String.valueOf(Codec.MESSAGE_END);
+    private static final String CHARS_TO_ESCAPE = String.valueOf(Constants.MESSAGE_END);
+    private static final String MESSAGE_END = String.valueOf(Constants.MESSAGE_END);
 
     private Charset encoding;
 
@@ -19,14 +19,13 @@ public class Serializer implements ISerializer<Message> {
     }
 
     @Override
-    public byte[] serialize(Message message) {
+    public byte[] serialize(ClientMessage message) {
         ByteArrayOutputStream serialized = new ByteArrayOutputStream();
 
-        MessageSerializer messageSerializer = new MessageSerializer(message);
-        String messageString = messageSerializer.serialize();
+        String messageString = message.serialize();
 
         // escape message end char
-        messageString = Helper.escapeChars(messageString, CHARS_TO_ESCAPE, Codec.ESCAPE);
+        messageString = Helper.escapeChars(messageString, CHARS_TO_ESCAPE, Constants.ESCAPE);
 
         serialized.writeBytes(encoding.encode(messageString).array());
         serialized.writeBytes(encoding.encode(MESSAGE_END).array());

@@ -1,6 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.codec;
 
-public class Codec {
+public class Constants {
     public static final char PAYLOAD_START = ':';
     public static final char PAYLOAD_ITEM_SEPARATOR = ';';
     public static final char MESSAGE_END = '\n';
