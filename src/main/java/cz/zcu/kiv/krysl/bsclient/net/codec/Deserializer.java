@@ -26,8 +26,8 @@ public class Deserializer implements IDeserializer<ServerMessage> {
     private StringBuilder stringBuffer;
     private static final String CHARS_TO_ESCAPE = String.valueOf(Constants.MESSAGE_END);
 
-    public Deserializer(Charset encoding) {
-        this.stringDecoder = encoding.newDecoder();
+    public Deserializer() {
+        this.stringDecoder = Constants.ENCODING.newDecoder();
         this.stringDecoder.onMalformedInput(CodingErrorAction.REPORT);
         this.stringDecoder.onUnmappableCharacter(CodingErrorAction.REPORT);
         this.charBuffer = CharBuffer.allocate(1024);
@@ -50,6 +50,7 @@ public class Deserializer implements IDeserializer<ServerMessage> {
             }
 
             // append decoded string into the stringBuffer
+            charBuffer.flip();
             stringBuffer.append(charBuffer.toString());
 
             if (result.isUnderflow()) {
@@ -86,6 +87,8 @@ public class Deserializer implements IDeserializer<ServerMessage> {
 
             messages.add(message);
         }
+
+        stringBuffer = new StringBuilder(stringBuffer.subSequence(offset, stringBuffer.length()).toString());
 
         return messages;
     }

@@ -14,8 +14,8 @@ public class Serializer implements ISerializer<ClientMessage> {
 
     private Charset encoding;
 
-    public Serializer(Charset encoding) {
-        this.encoding = encoding;
+    public Serializer() {
+        this.encoding = Constants.ENCODING;
     }
 
     @Override
