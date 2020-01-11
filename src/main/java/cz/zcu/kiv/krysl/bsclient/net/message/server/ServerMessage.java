@@ -52,7 +52,7 @@ public abstract class ServerMessage {
                 message = new SMessageShootHit();
                 break;
             case SHOOT_SUNK:
-                message = new SMessageShootSunk();
+                message = SMessageShootSunk.deserialize(deserializer.getPayloadDeserializer());
                 break;
             case SHOOT_MISS:
                 message = new SMessageShootMiss();

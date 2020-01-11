@@ -32,7 +32,7 @@ public class SessionKey implements ISerializableItem{
         try {
             return new SessionKey(deserializer.getString());
         } catch (IllegalArgumentException e) {
-            throw new DeserializeException("Can't deserialize session key from payload: " + e);
+            throw new DeserializeException("Can't deserialize SessionKey from payload: " + e);
         }
     }
 }

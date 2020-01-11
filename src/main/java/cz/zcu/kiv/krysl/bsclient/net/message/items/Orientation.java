@@ -1,5 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.net.message.items;
 
+import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
+import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadDeserializer;
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadSerializer;
 
 public enum Orientation implements ISerializableItem {
@@ -25,6 +27,21 @@ public enum Orientation implements ISerializableItem {
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + this);
+        }
+    }
+
+    public static Orientation deserialize(PayloadDeserializer deserializer) throws DeserializeException {
+        switch (deserializer.getString()) {
+            case "east":
+                return EAST;
+            case "north":
+                return NORTH;
+            case "west":
+                return WEST;
+            case "south":
+                return SOUTH;
+            default:
+                throw new DeserializeException("Can't deserialize Orientation from payload.");
         }
     }
 }
