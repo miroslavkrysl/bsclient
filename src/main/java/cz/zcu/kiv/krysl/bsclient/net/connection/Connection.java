@@ -20,7 +20,7 @@ import java.util.Queue;
  * @param <MessageIn> Incoming messages type.
  * @param <MessageOut> Outgoing messages type.
  */
-public class Connection<MessageIn, MessageOut> {
+public class Connection<MessageIn, MessageOut> implements IMessageInputStream<MessageIn>, IMessageOutputStream<MessageOut> {
 
     private static final int BUFFER_SIZE = 1024;
     private final InputStream inputStream;
