@@ -1,9 +1,12 @@
 package cz.zcu.kiv.krysl.bsclient.net.connection;
 
 
+import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -17,8 +20,7 @@ public class Receiver<MessageIn> extends Thread {
 
     private InputStream stream;
     private IDeserializer<MessageIn> deserializer;
-    private IIncomingMessageHandler<MessageIn> messageHandler;
-    private IConnectionLossHandler connectionLossHandler;
+    private IReceiverManager<MessageIn> receiverManager;
 
     private final byte[] buffer;
     private AtomicBoolean keepRunning;
@@ -28,18 +30,15 @@ public class Receiver<MessageIn> extends Thread {
      *
      * @param stream The stream to read from.
      * @param deserializer The deserializer used for message deserialization.
-     * @param messageHandler The handler which will be called when a new message is received.
-     * @param connectionLossHandler The handler which will be called when the connection loss occurs.
+     * @param receiverManager The handler which will be called when the connection is lost or a new message is received.
      */
     public Receiver(InputStream stream,
                     IDeserializer<MessageIn> deserializer,
-                    IIncomingMessageHandler<MessageIn> messageHandler,
-                    IConnectionLossHandler connectionLossHandler) {
+                    IReceiverManager<MessageIn> receiverManager) {
         super("Receiver");
         this.stream = stream;
         this.deserializer = deserializer;
-        this.messageHandler = messageHandler;
-        this.connectionLossHandler = connectionLossHandler;
+        this.receiverManager = receiverManager;
         this.buffer = new byte[BUFFER_SIZE];
         this.keepRunning = new AtomicBoolean(true);
     }
@@ -70,32 +69,29 @@ public class Receiver<MessageIn> extends Thread {
                     break;
                 }
 
-                try {
-                    // process incoming data
-                    MessageIn[] messages = deserializer.deserialize(Arrays.copyOfRange(buffer, 0, bytesRead));
+                // process incoming data
+                List<MessageIn> messages = deserializer.deserialize(Arrays.copyOfRange(buffer, 0, bytesRead));
 
-                    for (MessageIn message : messages) {
-                        messageHandler.handleIncomingMessage(message);
-                    }
-                } catch (IOException e) {
-                    // stream corrupted
-                    // notify upper layer
-                    connectionLossHandler.handleConnectionLoss(ConnectionLossCause.CORRUPTED);
-                    keepRunning.set(false);
-                    break;
+                for (MessageIn message : messages) {
+                    receiverManager.handleMessageReceived(message);
                 }
+
+            } catch (DeserializeException e) {
+                // stream corrupted
+                // notify upper layer
+                receiverManager.handleConnectionLost(ConnectionLossCause.CORRUPTED);
+                keepRunning.set(false);
+                break;
             } catch (IOException e) {
                 // stream closed
                 break;
-            } catch (InterruptedException e) {
-                // a blocking call on messageHandler was interrupted
             }
         }
 
         if (keepRunning.get()) {
             // unwanted connection loss
             // notify upper layer
-            connectionLossHandler.handleConnectionLoss(ConnectionLossCause.CLOSED);
+            receiverManager.handleConnectionLost(ConnectionLossCause.CLOSED);
         }
     }
 }
