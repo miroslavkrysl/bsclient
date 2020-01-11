@@ -6,10 +6,10 @@ import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadDeserializer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SunkenShips {
+public class SunkShips {
     private final Map<ShipId, Placement> ships;
 
-    public SunkenShips(Map<ShipId, Placement> ships) {
+    public SunkShips(Map<ShipId, Placement> ships) {
         this.ships = ships;
     }
 
@@ -17,11 +17,11 @@ public class SunkenShips {
         return ships;
     }
 
-    public static SunkenShips deserialize(PayloadDeserializer deserializer) throws DeserializeException {
+    public static SunkShips deserialize(PayloadDeserializer deserializer) throws DeserializeException {
         int length = deserializer.getInt();
 
         if (length < 0 || length > 5) {
-            throw new DeserializeException("Can't deserialize SunkenShips from payload, illegal array length.");
+            throw new DeserializeException("Can't deserialize SunkShips from payload, illegal array length.");
         }
 
         Map<ShipId, Placement> ships = new HashMap<>();
@@ -31,12 +31,12 @@ public class SunkenShips {
             Placement placement = Placement.deserialize(deserializer);
 
             if (ships.containsKey(id)) {
-                throw new DeserializeException("Can't deserialize SunkenShips from payload, ship ids are repeating.");
+                throw new DeserializeException("Can't deserialize SunkShips from payload, ship ids are repeating.");
             }
 
             ships.put(id, placement);
         }
 
-        return new SunkenShips(ships);
+        return new SunkShips(ships);
     }
 }

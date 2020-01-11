@@ -8,9 +8,9 @@ public class ReconnectedStateGame extends ReconnectedState {
     private Who onTurn;
     private Hits playerBoard;
     private Hits opponentBoard;
-    private SunkenShips sunkenShips;
+    private SunkShips sunkenShips;
 
-    public ReconnectedStateGame(Who onTurn, Hits playerBoard, Hits opponentBoard, SunkenShips sunkenShips) {
+    public ReconnectedStateGame(Who onTurn, Hits playerBoard, Hits opponentBoard, SunkShips sunkenShips) {
         this.onTurn = onTurn;
         this.playerBoard = playerBoard;
         this.opponentBoard = opponentBoard;
@@ -25,7 +25,7 @@ public class ReconnectedStateGame extends ReconnectedState {
         return opponentBoard;
     }
 
-    public SunkenShips getSunkenShips() {
+    public SunkShips getSunkenShips() {
         return sunkenShips;
     }
 
@@ -37,7 +37,7 @@ public class ReconnectedStateGame extends ReconnectedState {
         Who onTurn = Who.deserialize(deserializer);
         Hits playerBoard = Hits.deserialize(deserializer);
         Hits opponentBoard = Hits.deserialize(deserializer);
-        SunkenShips sunkenShips = SunkenShips.deserialize(deserializer);
+        SunkShips sunkenShips = SunkShips.deserialize(deserializer);
         return new ReconnectedStateGame(onTurn, playerBoard, opponentBoard, sunkenShips);
     }
 }
