@@ -2,12 +2,11 @@ package cz.zcu.kiv.krysl.bsclient.net.codec;
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.connection.IDeserializer;
-import cz.zcu.kiv.krysl.bsclient.net.message.server.ServerMessage;
+import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
 import cz.zcu.kiv.krysl.bsclient.util.Helper;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;

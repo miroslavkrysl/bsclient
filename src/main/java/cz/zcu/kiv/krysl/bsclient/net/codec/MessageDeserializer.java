@@ -1,7 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.net.codec;
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
-import cz.zcu.kiv.krysl.bsclient.net.message.server.ServerMessageKind;
+import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessageKind;
 
 public class MessageDeserializer {
 

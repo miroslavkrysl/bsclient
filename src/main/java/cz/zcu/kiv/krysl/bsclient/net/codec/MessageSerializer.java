@@ -1,6 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.codec;
 
-import cz.zcu.kiv.krysl.bsclient.net.message.client.ClientMessageKind;
+import cz.zcu.kiv.krysl.bsclient.net.messages.client.ClientMessageKind;
 
 public class MessageSerializer {
     private ClientMessageKind kind;

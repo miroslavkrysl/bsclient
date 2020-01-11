@@ -1,7 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.net.codec;
 
 import cz.zcu.kiv.krysl.bsclient.net.connection.ISerializer;
-import cz.zcu.kiv.krysl.bsclient.net.message.client.ClientMessage;
+import cz.zcu.kiv.krysl.bsclient.net.messages.client.ClientMessage;
 import cz.zcu.kiv.krysl.bsclient.util.Helper;
 
 import java.io.ByteArrayOutputStream;
