@@ -1,9 +1,9 @@
-package cz.zcu.kiv.krysl.bsclient.net.connection;
+package cz.zcu.kiv.krysl.bsclient.net.client;
 
 /**
  * Handles connection loss.
  */
-public interface IReceiverManager<MessageIn> {
+public interface IConnectionManager<MessageIn> {
 
     /**
      * Handle the incoming message.

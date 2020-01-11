@@ -1,4 +1,4 @@
-package cz.zcu.kiv.krysl.bsclient.net.connection;
+package cz.zcu.kiv.krysl.bsclient.net.client;
 
 /**
  * Handles incoming messages.

@@ -1,4 +1,6 @@
-package cz.zcu.kiv.krysl.bsclient.net.connection;
+package cz.zcu.kiv.krysl.bsclient.net.client;
+
+import cz.zcu.kiv.krysl.bsclient.net.connection.ISerializer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * which are then written into to the output stream.
  * run() method must be called to start the sending thread.
  */
-public class Sender<MessageOut> extends Thread {
+class Sender<MessageOut> extends Thread {
 
     private OutputStream stream;
     private ISerializer<MessageOut> serializer;

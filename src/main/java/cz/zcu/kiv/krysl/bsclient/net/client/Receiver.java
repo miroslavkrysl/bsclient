@@ -1,7 +1,8 @@
-package cz.zcu.kiv.krysl.bsclient.net.connection;
+package cz.zcu.kiv.krysl.bsclient.net.client;
 
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
+import cz.zcu.kiv.krysl.bsclient.net.connection.IDeserializer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * which are then pushed to the provided incoming queue.
  * run() method must be called to start the receiving thread.
  */
-public class Receiver<MessageIn> extends Thread {
+class Receiver<MessageIn> extends Thread {
     private static final int BUFFER_SIZE = 1024;
 
     private InputStream stream;

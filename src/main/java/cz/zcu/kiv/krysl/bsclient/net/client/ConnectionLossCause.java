@@ -1,4 +1,4 @@
-package cz.zcu.kiv.krysl.bsclient.net.connection;
+package cz.zcu.kiv.krysl.bsclient.net.client;
 
 /**
  * Enum containing causes of unwanted loss of the connection.
