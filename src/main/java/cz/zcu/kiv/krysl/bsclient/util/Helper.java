@@ -34,7 +34,7 @@ public class Helper {
     public static int findChar(CharSequence string, int start, char toFind, char escape) {
         boolean isEscaped = false;
 
-        if (start <= 0 || start > string.length()) {
+        if (start < 0 || start > string.length()) {
             throw new IllegalArgumentException("Start position must be within 0 and string.length() inclusive.");
         }
 
