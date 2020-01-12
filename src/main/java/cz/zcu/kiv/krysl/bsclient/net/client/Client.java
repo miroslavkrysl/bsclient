@@ -2,16 +2,21 @@ package cz.zcu.kiv.krysl.bsclient.net.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
+import cz.zcu.kiv.krysl.bsclient.net.client.responses.Response;
+import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseDisconnected;
+import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseMessage;
+import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseOffline;
 import cz.zcu.kiv.krysl.bsclient.net.codec.Deserializer;
 import cz.zcu.kiv.krysl.bsclient.net.codec.Serializer;
 import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
 import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageAlive;
 import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageLogin;
 import cz.zcu.kiv.krysl.bsclient.net.messages.client.ClientMessage;
-import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessageKind;
-import cz.zcu.kiv.krysl.bsclient.net.results.ConnectResult;
-import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
+import cz.zcu.kiv.krysl.bsclient.net.messages.server.SMessageLoginOk;
 import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
+import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessageKind;
+import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
+import cz.zcu.kiv.krysl.bsclient.net.types.SessionKey;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,286 +24,255 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Client {
+
     private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(10);
-    private static final Duration TIMEOUT_REQUEST = Duration.ofSeconds(5);
+    private static final Duration TIMEOUT_RECEIVE = TIMEOUT_ALIVE.dividedBy(2);
 
     private final InetSocketAddress serverAddress;
-    private final Nickname nickname;
-    private final ExecutorService aliveRequestExecutor;
-    private final ExecutorService receiverExecutor;
+    private final SessionKey sessionKey;
 
-    private final BlockingQueue<IncomingMessageQueueItem> responseQueue;
-    private final Lock requestLock;
-    private final Lock stateLock;
-    private boolean disconnected;
-    private boolean offline;
-    private ConnectionLossCause offlineCause;
     private Connection<ServerMessage, ClientMessage> connection;
 
-    /**
-     * Create a client, that can be connected to the server.
-     *
-     * @param serverAddress The address of the server which the client will connect to.
-     * @param nickname      The nickname which will be used to login on the server.
-     */
-    public Client(InetSocketAddress serverAddress, Nickname nickname) {
+    private final ReentrantLock requestLock;
+    private BlockingQueue<Response> responseBox;
+
+    private final AtomicBoolean offline;
+    private final AtomicBoolean disconnected;
+
+    private final AtomicReference<OfflineCause> offlineCause;
+
+    private final Thread receiverThread;
+
+    public Client(InetSocketAddress serverAddress, Nickname nickname) throws ConnectException {
         this.serverAddress = serverAddress;
-        this.nickname = nickname;
 
         this.requestLock = new ReentrantLock();
+        this.responseBox = new SynchronousQueue<>();
 
-        this.stateLock = new ReentrantLock();
-        this.offline = false;
-        this.offlineCause = null;
-        this.disconnected = true;
+        this.offline = new AtomicBoolean(false);
+        this.disconnected = new AtomicBoolean(false);
 
-        this.responseQueue = new SynchronousQueue<>();
-        this.aliveRequestExecutor = Executors.newFixedThreadPool(1);
-        this.receiverExecutor = Executors.newFixedThreadPool(1);
-    }
+        this.offlineCause = new AtomicReference<>(null);
 
-    /**
-     * Send the request to the server and receive a response.
-     *
-     * @param request Request to send.
-     * @return A received response.
-     * @throws DisconnectedException If the client is disconnected before or during the call.
-     * @throws OfflineException      If the underlying connection is lost during the call.
-     * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
-     * @throws InterruptedException  If the call is interrupted.
-     */
-    private ServerMessage request(ClientMessage request) throws DisconnectedException, OfflineException, IllegalStateException, InterruptedException {
-        requestLock.lock();
 
-        if (isDisconnected()) {
-            throw new DisconnectedException("Can't do a request on disconnected client.");
+        // setup connection
+        try {
+            // create connection
+            this.connection = new Connection<>(serverAddress, new Deserializer(), new Serializer(), TIMEOUT_RECEIVE);
+            this.receiverThread = new Thread(this::runReceiving);
+            this.receiverThread.start();
+        } catch (IOException e) {
+            throw new ConnectException("Can't connect to the server: " + e.getMessage());
         }
 
-        if (isOffline()) {
-            throw new OfflineException("Can't do a request on offline client.", getOfflineCause());
+        // login
+        ServerMessage response;
+
+        try {
+            response = request(new CMessageLogin(nickname));
+        } catch (OfflineException e) {
+            throw new ConnectException("Connection closed too early: " + e.getMessage());
+        } catch (DisconnectedException e) {
+            throw new ConnectException("Server disconnected too early: " + e.getMessage());
+        } catch (InvalidStateException e) {
+            // should not happen, server must be dumb
+            throw new ConnectException("Server is responding incorrectly.");
         }
 
-        // send request
-        connection.send(request);
-
-        // get response
-        IncomingMessageQueueItem item = responseQueue.take();
-
-        if (item.isOffline()) {
-            // no response, but client is offline
-            OfflineItem offline = (OfflineItem) item;
-            throw new OfflineException("Can't execute action because the client went offline.", getOfflineCause());
+        switch (response.getKind()) {
+            case LOGIN_OK:
+                SMessageLoginOk m = (SMessageLoginOk) response;
+                this.sessionKey = m.getSessionKey();
+                break;
+            case LOGIN_FAIL:
+                this.connection.close();
+                throw new ConnectException("Server is full.");
+            default:
+                // unexpected response
+                this.connection.close();
+                throw new ConnectException("Server is responding incorrectly.");
         }
-
-        if (item.isDisconnected()) {
-            // no response, because the client is disconnected
-            DisconnectedItem offline = (DisconnectedItem) item;
-            throw new DisconnectedException("Can't execute action because the connection was disconnected during the call.");
-        }
-
-        ServerMessage response = ((ResponseItem) item).getResponse();
-
-        if (response.getKind() == ServerMessageKind.ILLEGAL_STATE) {
-            throw new IllegalStateException("Action is illegal in the current client state.");
-        }
-
-        requestLock.unlock();
-        return response;
-    }
-
-    /**
-     * Check if the client is disconnected.
-     *
-     * @return True if disconnected, false otherwise.
-     */
-    public boolean isDisconnected() {
-        stateLock.lock();
-        boolean isDisconnected = disconnected;
-        stateLock.unlock();
-        return isDisconnected;
-    }
-
-    /**
-     * Check if the client is offline.
-     *
-     * @return True if offline, false otherwise.
-     */
-    public boolean isOffline() {
-        stateLock.lock();
-        boolean isOffline = offline;
-        stateLock.unlock();
-        return isOffline;
-    }
-
-    /**
-     * Get the offline state cause.
-     *
-     * @return The offline state cause or null if not offline.
-     */
-    public ConnectionLossCause getOfflineCause() {
-        stateLock.lock();
-        ConnectionLossCause cause = offlineCause;
-        stateLock.unlock();
-        return cause;
-    }
-
-    /**
-     * Switch this client to the disconnected state.
-     */
-    private void goDisconnected() {
-        stateLock.lock();
-        offline = false;
-        offlineCause = null;
-        disconnected = true;
-        stateLock.unlock();
-    }
-
-    /**
-     * Switch this client to the offline state.
-     *
-     * @param cause The cause of the connection loss.
-     */
-    private void goOffline(ConnectionLossCause cause) {
-        stateLock.lock();
-        offline = true;
-        offlineCause = cause;
-        disconnected = false;
-        stateLock.unlock();
-    }
-
-    /**
-     * Switch this client to the offline state.
-     */
-    private void goOnline() {
-        stateLock.lock();
-        offline = false;
-        offlineCause = null;
-        disconnected = false;
-        stateLock.unlock();
     }
 
     private void runReceiving() {
         Instant lastReceived = Instant.now();
 
-        while (!isOffline() && !isDisconnected()) {
+        while (!offline.get() && !disconnected.get()) {
             try {
+                System.out.print("recieving... ");
                 ServerMessage message = connection.receive();
+                System.out.println("recieved: " + message);
 
                 if (message == null) {
                     // receive timeout happened
 
+                    // measure elapsed time
                     Instant now = Instant.now();
                     Duration elapsed = Duration.between(lastReceived, now);
 
                     if (elapsed.compareTo(TIMEOUT_ALIVE) >= 0) {
                         // alive timeout happened
-
-                        if (responseQueue.offer(new OfflineItem())) {
-                            // response expected but server not responding, probably network error
-                            goOffline(ConnectionLossCause.UNAVAILABLE);
-                            break;
+                        offlineCause.set(OfflineCause.UNAVAILABLE);
+                        offline.set(true);
+                        if (!requestLock.tryLock()) {
+                            // response expected
+                            responseBox.offer(new ResponseOffline());
                         } else {
-                            // no response expected
-                            // send alive message
-                            aliveRequestExecutor.submit(() -> {
-                                try {
-                                    ServerMessage response = request(new CMessageAlive());
-                                    if (response.getKind() != ServerMessageKind.ALIVE_OK) {
-                                        goOffline(ConnectionLossCause.CORRUPTED);
-                                    }
-                                } catch (DisconnectedException | OfflineException | IllegalStateException | InterruptedException e) {
-                                    // don't care for errors
-                                }
-                            });
+                            requestLock.unlock();
                         }
+                        break;
                     }
+
+                    if (requestLock.tryLock()) {
+                        // no response expected -> send alive request
+                        new Thread(this::aliveRequest).start();
+
+                        requestLock.unlock();
+                    }
+
                     continue;
                 }
 
                 lastReceived = Instant.now();
 
                 if (message.isResponse()) {
-                    if (!responseQueue.offer(new ResponseItem(message))) {
+                    if (requestLock.tryLock()) {
                         // response not expected
-                        goOffline(ConnectionLossCause.CORRUPTED);
+                        offlineCause.set(OfflineCause.INVALID_MESSAGE);
+                        offline.set(true);
+                        requestLock.unlock();
                         break;
                     }
+
+                    // hand response to waiting request
+                    responseBox.offer(new ResponseMessage(message));
                     continue;
                 }
 
                 // TODO: handle all server notifications
-//                switch (message.getKind()) {
-//                    case DISCONNECT:
-//                        break;
-//                    case OPPONENT_JOINED:
-//                        break;
-//                    case OPPONENT_READY:
-//                        break;
-//                    case OPPONENT_LEFT:
-//                        break;
-//                    case OPPONENT_MISSED:
-//                        break;
-//                    case OPPONENT_HIT:
-//                        break;
-//                    case GAME_OVER:
-//                        break;
-//                }
-
-                System.out.println("server notification: " + message.getClass().getName());
-
+                switch (message.getKind()) {
+                    case DISCONNECT:
+                        disconnected.set(true);
+                        if (!requestLock.tryLock()) {
+                            // response expected
+                            responseBox.offer(new ResponseDisconnected());
+                        } else {
+                            requestLock.unlock();
+                        }
+                        break;
+                    case OPPONENT_JOINED:
+                        break;
+                    case OPPONENT_READY:
+                        break;
+                    case OPPONENT_LEFT:
+                        break;
+                    case OPPONENT_MISSED:
+                        break;
+                    case OPPONENT_HIT:
+                        break;
+                    case GAME_OVER:
+                        break;
+                }
             } catch (DisconnectedException e) {
                 // stream closed
-                goOffline(ConnectionLossCause.CLOSED);
-                break;
+                offlineCause.set(OfflineCause.CLOSED);
+                offline.set(true);
+
+                if (!requestLock.tryLock()) {
+                    // response expected
+                    responseBox.offer(new ResponseOffline());
+                    break;
+                } else {
+                    requestLock.unlock();
+                }
             } catch (DeserializeException e) {
                 // stream corrupted
-                goOffline(ConnectionLossCause.CORRUPTED);
-                break;
+                offlineCause.set(OfflineCause.CORRUPTED);
+                offline.set(true);
+
+                if (!requestLock.tryLock()) {
+                    // response expected
+                    responseBox.offer(new ResponseOffline());
+                    break;
+                } else {
+                    requestLock.unlock();
+                }
             }
         }
 
         connection.close();
+        System.out.println("receiving ended");
     }
 
-    /**
-     * Connect to the server.
-     * Internally it creates a connection requests a login.
-     *
-     * @return A result of connecting to the server.
-     * @throws AlreadyConnectedException If the client is already connected to the server.
-     */
-    synchronized public ConnectResult connect() throws AlreadyConnectedException, InterruptedException, ClientConnectException {
-        if (!isDisconnected()) {
-            throw new AlreadyConnectedException("Can't connect an already connected client.");
-        }
-
+    private void aliveRequest() {
         try {
-            connection = new Connection<>(serverAddress, new Deserializer(), new Serializer(), TIMEOUT_REQUEST);
-            goOnline();
-            receiverExecutor.submit(this::runReceiving);
-
-            ServerMessage response = request(new CMessageLogin(nickname));
-
-            switch (response.getKind()) {
-                case LOGIN_OK:
-                    return new ConnectResult();
-                case LOGIN_FAIL:
-                    return new ConnectResult();
-                default:
-                    // unexpected response
-                    goDisconnected();
-                    throw new ClientConnectException("Can't connect to the server.");
+            ServerMessage response = request(new CMessageAlive());
+            if (response.getKind() != ServerMessageKind.ALIVE_OK) {
+                handleInvalidMessage();
             }
-        } catch (OfflineException | IllegalStateException | DisconnectedException e) {
-            goDisconnected();
-            throw new ClientConnectException("Can't connect to the server.");
-        } catch (IOException e) {
-            goDisconnected();
-            throw new ClientConnectException("Can't connect to the server: " + e.getMessage());
+        } catch (DisconnectedException | OfflineException | InvalidStateException e) {
+            // don't care for this errors
         }
+        System.out.println("alive req ended");
+    }
+
+    private void handleInvalidMessage() throws OfflineException {
+        this.connection.close();
+        this.offlineCause.set(OfflineCause.INVALID_MESSAGE);
+        this.offline.set(true);
+
+        throw new OfflineException(this.offlineCause.get());
+    }
+
+    private void checkOnline() throws DisconnectedException, OfflineException {
+        if (disconnected.get()) {
+            throw new DisconnectedException("Can't perform a request on disconnected client.");
+        }
+        if (offline.get()) {
+            throw new OfflineException(offlineCause.get());
+        }
+    }
+
+    private ServerMessage request(ClientMessage request) throws DisconnectedException, OfflineException, InvalidStateException {
+        requestLock.lock();
+
+        checkOnline();
+
+        // send request
+        connection.send(request);
+
+        // get response
+        Response response;
+        while (true) {
+            try {
+                response = responseBox.take();
+                break;
+            } catch (InterruptedException e) {
+                // interrupted
+            }
+        }
+
+        if (response.isOffline()) {
+            // no response because client went offline
+            throw new OfflineException(offlineCause.get());
+        }
+
+        if (response.isDisconnected()) {
+            // no response because the server disconnected
+            throw new DisconnectedException("Server disconnected.");
+        }
+
+        ServerMessage message = ((ResponseMessage) response).getResponse();
+
+        if (message.getKind() == ServerMessageKind.ILLEGAL_STATE) {
+            throw new InvalidStateException("Action is illegal in the current client state.");
+        }
+
+        requestLock.unlock();
+        return message;
     }
 }

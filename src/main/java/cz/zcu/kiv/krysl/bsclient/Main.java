@@ -1,7 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient;
 
 import cz.zcu.kiv.krysl.bsclient.net.client.Client;
-import cz.zcu.kiv.krysl.bsclient.net.client.ClientConnectException;
+import cz.zcu.kiv.krysl.bsclient.net.client.ConnectException;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -20,11 +20,8 @@ public class Main extends Application {
 
         try {
             Client client = new Client(new InetSocketAddress("localhost", 20000), new Nickname("freddy"));
-            ConnectResult result = client.connect();
-            System.out.println("Result: " + result.getClass().getName());
-        } catch (InterruptedException e) {
-            //
-        } catch (ClientConnectException e) {
+            System.out.println("logged");
+        } catch (ConnectException e) {
             System.out.println(e.getMessage());
         }
 

@@ -1,11 +1,11 @@
-package cz.zcu.kiv.krysl.bsclient.net.client;
+package cz.zcu.kiv.krysl.bsclient.net.client.responses;
 
 import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
 
-public class ResponseItem extends IncomingMessageQueueItem {
+public class ResponseMessage extends Response {
     private ServerMessage response;
 
-    public ResponseItem(ServerMessage response) {
+    public ResponseMessage(ServerMessage response) {
         this.response = response;
     }
 

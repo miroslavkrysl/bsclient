@@ -1,8 +1,8 @@
 package cz.zcu.kiv.krysl.bsclient.net.messages.server;
 
-public class SMessageContextIllegal extends ServerMessage {
+public class SMessageIllegalState extends ServerMessage {
 
-    SMessageContextIllegal() {
+    SMessageIllegalState() {
         super(ServerMessageKind.ILLEGAL_STATE);
     }
 }
