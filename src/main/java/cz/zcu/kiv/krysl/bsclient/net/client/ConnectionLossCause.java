@@ -10,7 +10,12 @@ public enum ConnectionLossCause {
     CLOSED,
 
     /**
-     * Messages couldn't be properly deserialized from the connection stream.
+     * Messages couldn't be properly deserialized from the connection stream or no message is even expected.
      */
-    CORRUPTED
+    CORRUPTED,
+
+    /**
+     * Remote point is not responding for an certain period.
+     */
+    UNAVAILABLE
 }

@@ -14,7 +14,7 @@ public interface BattleshipsClient {
     /**
      * Connect to the server.
      *
-     * @return A result of connecting. Client may be success or failure.
+     * @return A result of connecting to the server.
      * @throws IOException               When an error occurs while creating connection to the server.
      * @throws AlreadyConnectedException If the client is already connected to the server.
      */
