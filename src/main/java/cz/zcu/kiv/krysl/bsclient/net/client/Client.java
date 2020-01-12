@@ -7,17 +7,14 @@ import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseDisconnected;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseMessage;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseOffline;
 import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResult;
+import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResultHit;
+import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResultMiss;
+import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResultSunk;
 import cz.zcu.kiv.krysl.bsclient.net.codec.Deserializer;
 import cz.zcu.kiv.krysl.bsclient.net.codec.Serializer;
 import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
-import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageAlive;
-import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageLogin;
-import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageRestoreSession;
-import cz.zcu.kiv.krysl.bsclient.net.messages.client.ClientMessage;
-import cz.zcu.kiv.krysl.bsclient.net.messages.server.SMessageLoginOk;
-import cz.zcu.kiv.krysl.bsclient.net.messages.server.SMessageRestoreSessionOk;
-import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
-import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessageKind;
+import cz.zcu.kiv.krysl.bsclient.net.messages.client.*;
+import cz.zcu.kiv.krysl.bsclient.net.messages.server.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.*;
 
 import java.io.IOException;
@@ -212,19 +209,19 @@ public class Client implements BattleshipsClient {
         try {
             ServerMessage response = request(new CMessageAlive());
             if (response.getKind() != ServerMessageKind.ALIVE_OK) {
-                handleInvalidMessage();
+                throw handleInvalidMessage();
             }
         } catch (DisconnectedException | OfflineException | InvalidStateException e) {
             // don't care for this errors
         }
     }
 
-    private void handleInvalidMessage() throws OfflineException {
+    private OfflineException handleInvalidMessage() {
         this.connection.close();
         this.offlineCause.set(OfflineCause.INVALID_MESSAGE);
         this.offline.set(true);
 
-        throw new OfflineException(this.offlineCause.get());
+        return new OfflineException(this.offlineCause.get());
     }
 
     private void checkOnline() throws DisconnectedException, OfflineException {
@@ -315,8 +312,7 @@ public class Client implements BattleshipsClient {
             throw new ConnectException("Server disconnected too early: " + e.getMessage());
         } catch (InvalidStateException e) {
             // should not happen, server must be dumb
-            connection.close();
-            throw new ConnectException("Server is responding incorrectly.");
+            throw handleInvalidMessage();
         }
 
         switch (response.getKind()) {
@@ -337,31 +333,78 @@ public class Client implements BattleshipsClient {
 
     @Override
     public boolean joinGame() throws DisconnectedException, OfflineException, InvalidStateException {
-        return false;
+        ServerMessage response = request(new CMessageJoinGame());
+
+        switch (response.getKind()) {
+            case JOIN_GAME_OK:
+                return true;
+            case JOIN_GAME_WAIT:
+                return false;
+            default:
+                throw handleInvalidMessage();
+        }
     }
 
     @Override
     public boolean chooseLayout(Layout layout) throws DisconnectedException, OfflineException, InvalidStateException {
-        return false;
+        ServerMessage response = request(new CMessageLayout(layout));
+
+        switch (response.getKind()) {
+            case LAYOUT_OK:
+                return true;
+            case LAYOUT_FAIL:
+                return false;
+            default:
+                throw handleInvalidMessage();
+        }
     }
 
     @Override
     public ShootResult shoot(Position position) throws DisconnectedException, OfflineException, InvalidStateException {
-        return null;
+        ServerMessage response = request(new CMessageShoot(position));
+
+        switch (response.getKind()) {
+            case SHOOT_HIT:
+                return new ShootResultHit();
+            case SHOOT_MISS:
+                return new ShootResultMiss();
+            case SHOOT_SUNK:
+                SMessageShootSunk r = (SMessageShootSunk) response;
+                return new ShootResultSunk(r.getPlacement());
+            default:
+                throw handleInvalidMessage();
+        }
     }
 
     @Override
     public void leaveGame() throws DisconnectedException, OfflineException, InvalidStateException {
+        ServerMessage response = request(new CMessageLeaveGame());
 
+        if (response.getKind() != ServerMessageKind.LEAVE_GAME_OK) {
+            throw handleInvalidMessage();
+        }
     }
 
     @Override
     public void disconnect() throws DisconnectedException, OfflineException {
+        try {
+            ServerMessage response = request(new CMessageDisconnect());
 
+            if (response.getKind() != ServerMessageKind.DISCONNECT_OK) {
+                throw handleInvalidMessage();
+            }
+
+            disconnected.set(true);
+            connection.close();
+        } catch (InvalidStateException e) {
+            // should not happen, server must be dumb
+            throw handleInvalidMessage();
+        }
     }
 
     @Override
     public void close() {
-
+        disconnected.set(true);
+        connection.close();
     }
 }
