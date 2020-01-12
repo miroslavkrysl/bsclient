@@ -24,6 +24,9 @@ public abstract class ServerMessage {
             case CONTEXT_ILLEGAL:
                 message = new SMessageContextIllegal();
                 break;
+            case ALIVE_OK:
+                message = new SMessageAliveOk();
+                break;
             case RECONNECT_OK:
                 message = SMessageReconnectOk.deserialize(deserializer.getPayloadDeserializer());
                 break;
@@ -89,5 +92,9 @@ public abstract class ServerMessage {
         }
 
         return message;
+    }
+
+    public boolean isResponse() {
+        return kind.isResponse();
     }
 }
