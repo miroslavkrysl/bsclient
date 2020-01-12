@@ -4,12 +4,12 @@ import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadDeserializer;
 import cz.zcu.kiv.krysl.bsclient.net.types.RestoreState;
 
-public class SMessageReconnectOk extends ServerMessage {
+public class SMessageRestoreSessionOk extends ServerMessage {
 
     private RestoreState state;
 
-    public SMessageReconnectOk(RestoreState state) {
-        super(ServerMessageKind.RECONNECT_OK);
+    public SMessageRestoreSessionOk(RestoreState state) {
+        super(ServerMessageKind.RESTORE_SESSION_OK);
         this.state = state;
     }
 
@@ -17,9 +17,9 @@ public class SMessageReconnectOk extends ServerMessage {
         return state;
     }
 
-    public static SMessageReconnectOk deserialize(PayloadDeserializer deserializer) throws DeserializeException {
+    public static SMessageRestoreSessionOk deserialize(PayloadDeserializer deserializer) throws DeserializeException {
         RestoreState state = RestoreState.deserialize(deserializer);
-        return new SMessageReconnectOk(state);
+        return new SMessageRestoreSessionOk(state);
     }
 
 }

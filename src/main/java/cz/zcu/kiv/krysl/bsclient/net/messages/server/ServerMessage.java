@@ -27,10 +27,10 @@ public abstract class ServerMessage {
             case ALIVE_OK:
                 message = new SMessageAliveOk();
                 break;
-            case RECONNECT_OK:
-                message = SMessageReconnectOk.deserialize(deserializer.getPayloadDeserializer());
+            case RESTORE_SESSION_OK:
+                message = SMessageRestoreSessionOk.deserialize(deserializer.getPayloadDeserializer());
                 break;
-            case RECONNECT_FAIL:
+            case RESTORE_SESSION_FAIL:
                 message = new SMessageReconnectFail();
                 break;
             case LOGIN_OK:

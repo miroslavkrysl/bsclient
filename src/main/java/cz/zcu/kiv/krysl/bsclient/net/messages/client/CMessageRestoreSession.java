@@ -3,11 +3,11 @@ package cz.zcu.kiv.krysl.bsclient.net.messages.client;
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadSerializer;
 import cz.zcu.kiv.krysl.bsclient.net.types.SessionKey;
 
-public class CMessageReconnect extends ClientMessage {
+public class CMessageRestoreSession extends ClientMessage {
     private final SessionKey sessionKey;
 
-    public CMessageReconnect(SessionKey sessionKey) {
-        super(ClientMessageKind.RECONNECT);
+    public CMessageRestoreSession(SessionKey sessionKey) {
+        super(ClientMessageKind.RESTORE_SESSION);
 
         this.sessionKey = sessionKey;
     }

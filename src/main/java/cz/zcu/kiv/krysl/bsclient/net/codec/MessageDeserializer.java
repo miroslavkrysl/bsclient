@@ -33,10 +33,10 @@ public class MessageDeserializer {
                 return ServerMessageKind.ILLEGAL_STATE;
             case "alive_ok":
                 return ServerMessageKind.ALIVE_OK;
-            case "reconnect_ok":
-                return ServerMessageKind.RECONNECT_OK;
-            case "reconnect_fail":
-                return ServerMessageKind.RECONNECT_FAIL;
+            case "restore_session_ok":
+                return ServerMessageKind.RESTORE_SESSION_OK;
+            case "restore_session_fail":
+                return ServerMessageKind.RESTORE_SESSION_FAIL;
             case "login_ok":
                 return ServerMessageKind.LOGIN_OK;
             case "login_fail":

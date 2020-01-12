@@ -5,8 +5,8 @@ public enum ServerMessageKind {
 
     ALIVE_OK,
 
-    RECONNECT_OK,
-    RECONNECT_FAIL,
+    RESTORE_SESSION_OK,
+    RESTORE_SESSION_FAIL,
 
     LOGIN_OK,
     LOGIN_FAIL,
@@ -37,8 +37,8 @@ public enum ServerMessageKind {
         switch (this) {
             case ILLEGAL_STATE:
             case ALIVE_OK:
-            case RECONNECT_OK:
-            case RECONNECT_FAIL:
+            case RESTORE_SESSION_OK:
+            case RESTORE_SESSION_FAIL:
             case LOGIN_OK:
             case LOGIN_FAIL:
             case JOIN_GAME_WAIT:

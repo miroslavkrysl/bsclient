@@ -36,8 +36,8 @@ public class MessageSerializer {
             case ALIVE:
                 header = "alive";
                 break;
-            case RECONNECT:
-                header = "reconnect";
+            case RESTORE_SESSION:
+                header = "restore_session";
                 break;
             case LOGIN:
                 header = "login";
