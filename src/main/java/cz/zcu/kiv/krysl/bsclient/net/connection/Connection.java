@@ -90,7 +90,7 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
     /**
      * Close the connection.
      */
-    public void close()  {
+    synchronized public void close()  {
         try {
             socket.close();
         } catch (IOException e) {
@@ -103,7 +103,7 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
      *
      * @return True if disconnected, false otherwise.
      */
-    public boolean isDisconnected() {
+    synchronized public boolean isDisconnected() {
         return this.socket.isClosed();
     }
 
@@ -123,6 +123,7 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
         try {
             outputStream.write(serialized);
         } catch (IOException e) {
+            close();
             throw new DisconnectedException("Connection was disconnected during the message sending.");
         }
 
@@ -146,7 +147,7 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
             }
 
             if (isDisconnected()) {
-                throw new DisconnectedException("Can't receive a message from a disconnected connection.");
+                throw new DisconnectedException("Connection is disconnected.");
             }
 
             if (timeout != Duration.ZERO) {
@@ -183,6 +184,7 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
             }
         }
 
+        close();
         throw new DisconnectedException("Connection was disconnected during the message receiving.");
     }
 }
