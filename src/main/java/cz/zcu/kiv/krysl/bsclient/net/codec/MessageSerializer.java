@@ -33,6 +33,9 @@ public class MessageSerializer {
         String header;
 
         switch (kind) {
+            case ALIVE:
+                header = "alive";
+                break;
             case RECONNECT:
                 header = "reconnect";
                 break;

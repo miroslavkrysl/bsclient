@@ -31,6 +31,8 @@ public class MessageDeserializer {
         switch (header) {
             case "context_illegal":
                 return ServerMessageKind.CONTEXT_ILLEGAL;
+            case "alive_ok":
+                return ServerMessageKind.ALIVE_OK;
             case "reconnect_ok":
                 return ServerMessageKind.RECONNECT_OK;
             case "reconnect_fail":
