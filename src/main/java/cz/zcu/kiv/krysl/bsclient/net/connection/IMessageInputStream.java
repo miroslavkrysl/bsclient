@@ -14,6 +14,8 @@ public interface IMessageInputStream<MessageIn> {
      * Receive a message.
      *
      * @throws DisconnectedException If the connection is disconnected before or during the call.
+     * @return Received message or null if timeout happens.
+     * @throws DeserializeException When the message cant be properly deserialized from the underlying stream.
      */
     MessageIn receive() throws DisconnectedException, DeserializeException;
 }
