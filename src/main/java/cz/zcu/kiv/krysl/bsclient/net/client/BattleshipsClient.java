@@ -9,22 +9,22 @@ import java.net.InetSocketAddress;
 
 public interface BattleshipsClient {
     /**
-     * Connect to the server on the given server address using the given nickname.
+     * Connect to the server on the address using the nickname.
      *
      * @return Session key if successfully connected, null if the server is full.
      * @throws AlreadyConnectedException If the client is already connected to the server.
      * @throws ConnectException    If there was an error while connecting to the server.
      */
-    SessionKey connect(InetSocketAddress serverAddress, Nickname nickname) throws AlreadyConnectedException, ConnectException;
+    SessionKey connect(InetSocketAddress serverAddress, Nickname nickname) throws AlreadyConnectedException, ConnectException, ClosedException;
 
     /**
-     * Restore client session using the given session key.
+     * Restore client session on the server on the address using the session key.
      *
      * @return Session restoration result.
      * @throws AlreadyConnectedException If the client is already connected to the server.
      * @throws ConnectException If there was an error while connecting to the server.
      */
-    RestoreResult restore() throws AlreadyConnectedException, ConnectException;
+    RestoreResult restore(InetSocketAddress serverAddress, SessionKey sessionKey) throws AlreadyConnectedException, ConnectException, ClosedException;
 
     /**
      * Join a game.
@@ -34,7 +34,7 @@ public interface BattleshipsClient {
      * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    boolean joinGame() throws DisconnectedException, OfflineException, IllegalStateException;
+    boolean joinGame() throws DisconnectedException, OfflineException, IllegalStateException, ClosedException;
 
     /**
      * Choose ships layout.
@@ -45,7 +45,7 @@ public interface BattleshipsClient {
      * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    boolean chooseLayout(Layout layout) throws DisconnectedException, OfflineException, IllegalStateException;
+    boolean chooseLayout(Layout layout) throws DisconnectedException, OfflineException, IllegalStateException, ClosedException;
 
     /**
      * Shoot.
@@ -56,7 +56,7 @@ public interface BattleshipsClient {
      * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    ShootResult shoot(Position position) throws DisconnectedException, OfflineException, IllegalStateException;
+    ShootResult shoot(Position position) throws DisconnectedException, OfflineException, IllegalStateException, ClosedException;
 
     /**
      * Leave the game.
@@ -65,7 +65,7 @@ public interface BattleshipsClient {
      * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    void leaveGame() throws DisconnectedException, OfflineException, IllegalStateException;
+    void leaveGame() throws DisconnectedException, OfflineException, IllegalStateException, ClosedException;
 
     /**
      * Properly disconnect from the server.
@@ -75,7 +75,7 @@ public interface BattleshipsClient {
      * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    void disconnect() throws DisconnectedException, OfflineException, IllegalStateException;
+    void disconnect() throws DisconnectedException, OfflineException, IllegalStateException, ClosedException;
 
     /**
      * Close the client.
