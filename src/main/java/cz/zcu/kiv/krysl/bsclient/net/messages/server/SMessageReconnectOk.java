@@ -2,25 +2,23 @@ package cz.zcu.kiv.krysl.bsclient.net.messages.server;
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadDeserializer;
-import cz.zcu.kiv.krysl.bsclient.net.types.Placement;
-import cz.zcu.kiv.krysl.bsclient.net.types.ReconnectedState;
-import cz.zcu.kiv.krysl.bsclient.net.types.ShipId;
+import cz.zcu.kiv.krysl.bsclient.net.types.RestoreState;
 
 public class SMessageReconnectOk extends ServerMessage {
 
-    private ReconnectedState state;
+    private RestoreState state;
 
-    public SMessageReconnectOk(ReconnectedState state) {
+    public SMessageReconnectOk(RestoreState state) {
         super(ServerMessageKind.RECONNECT_OK);
         this.state = state;
     }
 
-    public ReconnectedState getState() {
+    public RestoreState getState() {
         return state;
     }
 
     public static SMessageReconnectOk deserialize(PayloadDeserializer deserializer) throws DeserializeException {
-        ReconnectedState state = ReconnectedState.deserialize(deserializer);
+        RestoreState state = RestoreState.deserialize(deserializer);
         return new SMessageReconnectOk(state);
     }
 

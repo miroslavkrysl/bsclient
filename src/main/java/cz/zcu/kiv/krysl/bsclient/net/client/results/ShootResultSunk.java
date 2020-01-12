@@ -1,4 +1,4 @@
-package cz.zcu.kiv.krysl.bsclient.net.client;
+package cz.zcu.kiv.krysl.bsclient.net.client.results;
 
 import cz.zcu.kiv.krysl.bsclient.net.types.Placement;
 
