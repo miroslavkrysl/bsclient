@@ -14,7 +14,7 @@ public interface BattleshipsClient {
     /**
      * Connect to the server.
      *
-     * @return A result of connecting. May be success or failure.
+     * @return A result of connecting. Client may be success or failure.
      * @throws IOException               When an error occurs while creating connection to the server.
      * @throws AlreadyConnectedException If the client is already connected to the server.
      */
@@ -24,58 +24,58 @@ public interface BattleshipsClient {
      * Join a game.
      *
      * @return Result of joining the game.
-     * @throws DisconnectedException   If the connection is not connected.
-     * @throws OfflineException        If the underlying connection is lost during the call. May be restored back to online state.
-     * @throws IllegalRequestException If the request is illegal in the current connection state, or the state was changed during the call.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    JoinGameResult joinGame() throws DisconnectedException, OfflineException, IllegalRequestException;
+    JoinGameResult joinGame() throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
      * Choose ships layout.
      *
      * @param layout The layout to choose.
      * @return Result of choosing the layout.
-     * @throws DisconnectedException   If the connection is not connected.
-     * @throws OfflineException        If the underlying connection is lost during the call. May be restored back to online state.
-     * @throws IllegalRequestException If the request is illegal in the current connection state, or the state was changed during the call.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    ChooseLayoutResult chooseLayout(Layout layout) throws DisconnectedException, OfflineException, IllegalRequestException;
+    ChooseLayoutResult chooseLayout(Layout layout) throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
      * Shoot.
      *
      * @param position The target position.
      * @return Result of shooting.
-     * @throws DisconnectedException   If the connection is not connected.
-     * @throws OfflineException        If the underlying connection is lost during the call. May be restored back to online state.
-     * @throws IllegalRequestException If the request is illegal in the current connection state, or the state was changed during the call.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    ShootResult shoot(Position position) throws DisconnectedException, OfflineException, IllegalRequestException;
+    ShootResult shoot(Position position) throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
      * Shoot.
      *
-     * @throws DisconnectedException   If the connection is not connected.
-     * @throws OfflineException        If the underlying connection is lost during the call. May be restored back to online state.
-     * @throws IllegalRequestException If the request is illegal in the current connection state, or the state was changed during the call.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    void leaveGame() throws DisconnectedException, OfflineException, IllegalRequestException;
+    void leaveGame() throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
      * Properly disconnect from the server.
      * Session on the server is terminated.
      *
-     * @throws DisconnectedException   If the connection is not connected.
-     * @throws OfflineException        If the underlying connection is lost during the call. May be restored back to online state.
-     * @throws IllegalRequestException If the request is illegal in the current connection state, or the state was changed during the call.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    void disconnect() throws DisconnectedException, OfflineException, IllegalRequestException;
+    void disconnect() throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
      * Restore connection to online state from the offline state.
      *
      * @throws AlreadyOnlineException If the connection is already online.
-     * @throws DisconnectedException  If the connection is not connected.
+     * @throws DisconnectedException  If the client is disconnected before or during the call.
      */
     void restore() throws AlreadyOnlineException, DisconnectedException;
 
