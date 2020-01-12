@@ -1,19 +1,8 @@
 package cz.zcu.kiv.krysl.bsclient;
 
-import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
-import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
-import cz.zcu.kiv.krysl.bsclient.net.client.AlreadyConnectedException;
 import cz.zcu.kiv.krysl.bsclient.net.client.Client;
 import cz.zcu.kiv.krysl.bsclient.net.client.ClientConnectException;
-import cz.zcu.kiv.krysl.bsclient.net.client.ConnectionLossCause;
-import cz.zcu.kiv.krysl.bsclient.net.codec.Deserializer;
-import cz.zcu.kiv.krysl.bsclient.net.codec.Serializer;
-import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
-import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageLogin;
-import cz.zcu.kiv.krysl.bsclient.net.messages.client.ClientMessage;
-import cz.zcu.kiv.krysl.bsclient.net.results.ConnectResult;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
-import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;

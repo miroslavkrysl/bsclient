@@ -1,7 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
-import cz.zcu.kiv.krysl.bsclient.net.results.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.Layout;
 import cz.zcu.kiv.krysl.bsclient.net.types.Position;
 

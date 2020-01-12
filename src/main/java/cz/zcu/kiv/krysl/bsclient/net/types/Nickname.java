@@ -16,6 +16,10 @@ public class Nickname implements ISerializableItem{
             throw new IllegalArgumentException("Nickname must have at most 32 chars");
         }
 
+        if (!nickname.matches("[a-zA-Z0-9]+")) {
+            throw new IllegalArgumentException("Nickname must have only alphanumeric characters.");
+        }
+
         this.nickname = nickname;
     }
 
