@@ -1,6 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.client.results;
 
-public class RestoreResult {
+public abstract class RestoreResult {
     public boolean isFail() {
         return this instanceof RestoreResultFail;
     }

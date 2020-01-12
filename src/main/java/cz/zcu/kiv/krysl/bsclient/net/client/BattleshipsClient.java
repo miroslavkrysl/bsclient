@@ -1,27 +1,37 @@
 package cz.zcu.kiv.krysl.bsclient.net.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
+import cz.zcu.kiv.krysl.bsclient.net.client.results.RestoreResult;
 import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResult;
-import cz.zcu.kiv.krysl.bsclient.net.types.Layout;
-import cz.zcu.kiv.krysl.bsclient.net.types.Position;
+import cz.zcu.kiv.krysl.bsclient.net.types.*;
+
+import java.net.InetSocketAddress;
 
 public interface BattleshipsClient {
     /**
-     * Connect to the server.
+     * Connect to the server on the given server address using the given nickname.
      *
-     * @return True if successfully connected, false if the server is full.
+     * @return Session key if successfully connected, null if the server is full.
      * @throws AlreadyConnectedException If the client is already connected to the server.
-     * @throws InterruptedException      If the call is interrupted.
-     * @throws ClientConnectException    If there was an error while connecting to the server.
+     * @throws ConnectException    If there was an error while connecting to the server.
      */
-    boolean connect() throws AlreadyConnectedException, InterruptedException, ClientConnectException;
+    SessionKey connect(InetSocketAddress serverAddress, Nickname nickname) throws AlreadyConnectedException, ConnectException;
+
+    /**
+     * Restore client session using the given session key.
+     *
+     * @return Session restoration result.
+     * @throws AlreadyConnectedException If the client is already connected to the server.
+     * @throws ConnectException If there was an error while connecting to the server.
+     */
+    RestoreResult restore() throws AlreadyConnectedException, ConnectException;
 
     /**
      * Join a game.
      *
      * @return False if waiting for the opponent, true if the opponent is already in the game.
-     * @throws DisconnectedException If the client is disconnected before or during the call.
-     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws DisconnectedException If the server disconnects before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
     boolean joinGame() throws DisconnectedException, OfflineException, IllegalStateException;
@@ -31,8 +41,8 @@ public interface BattleshipsClient {
      *
      * @param layout The layout to choose.
      * @return True if the layout is accepted, false otherwise.
-     * @throws DisconnectedException If the client is disconnected before or during the call.
-     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws DisconnectedException If the server disconnects before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
     boolean chooseLayout(Layout layout) throws DisconnectedException, OfflineException, IllegalStateException;
@@ -42,41 +52,35 @@ public interface BattleshipsClient {
      *
      * @param position The target position.
      * @return Result of shooting.
-     * @throws DisconnectedException If the client is disconnected before or during the call.
-     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws DisconnectedException If the server disconnects before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
     ShootResult shoot(Position position) throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
-     * Shoot.
+     * Leave the game.
      *
-     * @throws DisconnectedException If the client is disconnected before or during the call.
-     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws DisconnectedException If the server disconnects before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
     void leaveGame() throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
      * Properly disconnect from the server.
-     * Session on the server is terminated.
+     * The session is terminated.
      *
-     * @throws DisconnectedException If the client is disconnected before or during the call.
-     * @throws OfflineException      If the underlying connection is lost during the call. Client may be restored back to online state.
+     * @throws DisconnectedException If the server disconnects before or during the call.
+     * @throws OfflineException      If the underlying connection is lost during the call. Client session may be restored back.
      * @throws IllegalStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
     void disconnect() throws DisconnectedException, OfflineException, IllegalStateException;
 
     /**
-     * Restore connection to online state from the offline state.
-     *
-     * @throws AlreadyOnlineException If the connection is already online.
-     * @throws DisconnectedException  If the client is disconnected before or during the call.
-     */
-    boolean restore() throws AlreadyOnlineException, DisconnectedException;
-
-    /**
-     * Force client to close immediately.
+     * Close the client.
+     * It can't be reused again.
+     * All future calls to this client will throw ClosedException.
      */
     void close();
 }

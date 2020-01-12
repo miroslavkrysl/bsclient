@@ -1,6 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.client.results;
 
-public class ShootResult {
+public abstract class ShootResult {
     public boolean isHit() {
         return this instanceof ShootResultHit;
     }
