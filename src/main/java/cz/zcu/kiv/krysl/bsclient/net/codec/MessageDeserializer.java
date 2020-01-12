@@ -29,8 +29,8 @@ public class MessageDeserializer {
 
     private ServerMessageKind deserializeHeader(String header) throws DeserializeException {
         switch (header) {
-            case "context_illegal":
-                return ServerMessageKind.CONTEXT_ILLEGAL;
+            case "illegal_state":
+                return ServerMessageKind.ILLEGAL_STATE;
             case "alive_ok":
                 return ServerMessageKind.ALIVE_OK;
             case "reconnect_ok":

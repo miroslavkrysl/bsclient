@@ -21,7 +21,7 @@ public abstract class ServerMessage {
         ServerMessage message;
 
         switch (kind) {
-            case CONTEXT_ILLEGAL:
+            case ILLEGAL_STATE:
                 message = new SMessageContextIllegal();
                 break;
             case ALIVE_OK:

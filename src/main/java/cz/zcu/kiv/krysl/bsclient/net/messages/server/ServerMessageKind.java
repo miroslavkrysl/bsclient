@@ -1,7 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.net.messages.server;
 
 public enum ServerMessageKind {
-    CONTEXT_ILLEGAL,
+    ILLEGAL_STATE,
 
     ALIVE_OK,
 
@@ -35,7 +35,7 @@ public enum ServerMessageKind {
 
     public boolean isResponse() {
         switch (this) {
-            case CONTEXT_ILLEGAL:
+            case ILLEGAL_STATE:
             case ALIVE_OK:
             case RECONNECT_OK:
             case RECONNECT_FAIL:
