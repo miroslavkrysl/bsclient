@@ -1,7 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
-import cz.zcu.kiv.krysl.bsclient.net.client.events.Event;
 import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResult;
 import cz.zcu.kiv.krysl.bsclient.net.types.*;
 
@@ -78,14 +77,4 @@ public interface BattleshipsClient {
      * Shutdown the client workers and underlying connection.
      */
     void close();
-
-    /**
-     * Get next event.
-     * Blocks until any event happens.
-     *
-     * @return Next event.
-     * @throws DisconnectedException If the client is disconnected before or during the call.
-     * @throws OfflineException If the underlying connection is lost before or during the call. Client session may be restored back.
-     */
-    Event getEvent() throws DisconnectedException, OfflineException;
 }

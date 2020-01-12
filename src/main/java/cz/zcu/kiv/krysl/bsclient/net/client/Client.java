@@ -2,9 +2,6 @@ package cz.zcu.kiv.krysl.bsclient.net.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
-import cz.zcu.kiv.krysl.bsclient.net.client.eventitems.EventQueueItem;
-import cz.zcu.kiv.krysl.bsclient.net.client.eventitems.EventQueueItemEvent;
-import cz.zcu.kiv.krysl.bsclient.net.client.events.*;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.Response;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseDisconnected;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseMessage;
@@ -27,7 +24,6 @@ import java.time.Instant;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Client implements BattleshipsClient {
@@ -35,16 +31,14 @@ public class Client implements BattleshipsClient {
     private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(10);
     private static final Duration TIMEOUT_RECEIVE = TIMEOUT_ALIVE.dividedBy(2);
 
+    private final IClientEventHandler eventHandler;
     private final InetSocketAddress serverAddress;
     private final SessionKey sessionKey;
 
     private Connection<ServerMessage, ClientMessage> connection;
 
     private final ReentrantLock requestLock;
-    private BlockingQueue<Response> responseBox;
-
-    private Lock eventQueueLock;
-    private final LinkedBlockingQueue<EventQueueItem> eventQueue;
+    private final BlockingQueue<Response> responseBox;
 
     private final AtomicBoolean offline;
     private final AtomicBoolean disconnected;
@@ -53,14 +47,12 @@ public class Client implements BattleshipsClient {
 
     private Thread receiverThread;
 
-    public Client(InetSocketAddress serverAddress, Nickname nickname) throws ConnectException {
+    public Client(InetSocketAddress serverAddress, Nickname nickname, IClientEventHandler eventHandler) throws ConnectException {
+        this.eventHandler = eventHandler;
         this.serverAddress = serverAddress;
 
         this.requestLock = new ReentrantLock();
         this.responseBox = new SynchronousQueue<>();
-
-        this.eventQueueLock = new ReentrantLock();
-        this.eventQueue = new LinkedBlockingQueue<>();
 
         this.offline = new AtomicBoolean(false);
         this.disconnected = new AtomicBoolean(false);
@@ -176,25 +168,25 @@ public class Client implements BattleshipsClient {
                         break;
                     case OPPONENT_JOINED:
                         SMessageOpponentJoined messageOpponentJoined = (SMessageOpponentJoined) message;
-                        eventQueue.offer(new EventQueueItemEvent(new EventOpponentJoined(messageOpponentJoined.getNickname())));
+                        eventHandler.handleOpponentJoined(messageOpponentJoined.getNickname());
                         break;
                     case OPPONENT_READY:
-                        eventQueue.offer(new EventQueueItemEvent(new EventOpponentReady()));
+                        eventHandler.handleOpponentReady();
                         break;
                     case OPPONENT_LEFT:
-                        eventQueue.offer(new EventQueueItemEvent(new EventOpponentLeft()));
+                        eventHandler.handleOpponentLeft();
                         break;
                     case OPPONENT_MISSED:
                         SMessageOpponentMissed messageOpponentMissed = (SMessageOpponentMissed) message;
-                        eventQueue.offer(new EventQueueItemEvent(new EventOpponentMissed(messageOpponentMissed.getPosition())));
+                        eventHandler.handleOpponentMissed(messageOpponentMissed.getPosition());
                         break;
                     case OPPONENT_HIT:
                         SMessageOpponentHit messageOpponentHit = (SMessageOpponentHit) message;
-                        eventQueue.offer(new EventQueueItemEvent(new EventOpponentHit(messageOpponentHit.getPosition())));
+                        eventHandler.handleOpponentHit(messageOpponentHit.getPosition());
                         break;
                     case GAME_OVER:
                         SMessageGameOver messageGameOver = (SMessageGameOver) message;
-                        eventQueue.offer(new EventQueueItemEvent(new EventGameOver(messageGameOver.getWinner())));
+                        eventHandler.handleGameOver(messageGameOver.getWinner());
                         break;
                 }
             } catch (DisconnectedException e) {
@@ -429,45 +421,5 @@ public class Client implements BattleshipsClient {
     public void close() {
         disconnected.set(true);
         connection.close();
-    }
-
-    @Override
-    synchronized public Event getEvent() throws DisconnectedException, OfflineException {
-        eventQueueLock.lock();
-
-        try {
-            checkOnline();
-        } catch (Exception e) {
-            eventQueueLock.unlock();
-            throw e;
-        }
-
-        // get event queue item
-        EventQueueItem item;
-        while (true) {
-            try {
-                item = eventQueue.take();
-                break;
-            } catch (InterruptedException e) {
-                // interrupted
-            }
-        }
-
-        if (item.isOffline()) {
-            // no event because client went offline
-            eventQueueLock.unlock();
-            throw new OfflineException(offlineCause.get());
-        }
-
-        if (item.isDisconnected()) {
-            // no event because the server disconnected
-            eventQueueLock.unlock();
-            throw new DisconnectedException("Server disconnected.");
-        }
-
-        Event event = ((EventQueueItemEvent) item).getEvent();
-
-        eventQueueLock.unlock();
-        return event;
     }
 }
