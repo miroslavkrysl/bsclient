@@ -79,13 +79,13 @@ public abstract class ServerMessage {
                 message = new SMessageOpponentLeft();
                 break;
             case OPPONENT_MISSED:
-                message = new SMessageOpponentMissed();
+                message = SMessageOpponentMissed.deserialize(deserializer.getPayloadDeserializer());
                 break;
             case OPPONENT_HIT:
                 message = SMessageOpponentHit.deserialize(deserializer.getPayloadDeserializer());
                 break;
             case GAME_OVER:
-                message = new SMessageGameOver();
+                message = SMessageGameOver.deserialize(deserializer.getPayloadDeserializer());
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + kind);

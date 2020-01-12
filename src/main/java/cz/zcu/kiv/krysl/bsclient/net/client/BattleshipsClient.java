@@ -1,6 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.net.client;
 
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
+import cz.zcu.kiv.krysl.bsclient.net.client.events.Event;
 import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResult;
 import cz.zcu.kiv.krysl.bsclient.net.types.*;
 
@@ -26,12 +27,12 @@ public interface BattleshipsClient {
     /**
      * Join a game.
      *
-     * @return False if waiting for the opponent, true if the opponent is already in the game.
+     * @return Nickname of the opponent if already in the game or null if must wait for the opponent to join.
      * @throws DisconnectedException If the client is disconnected before or during the call.
      * @throws OfflineException      If the underlying connection is lost before or during the call. Client session may be restored back.
      * @throws InvalidStateException If the request is illegal in the current connection state, or the state was changed during the call.
      */
-    boolean joinGame() throws DisconnectedException, OfflineException, InvalidStateException;
+    Nickname joinGame() throws DisconnectedException, OfflineException, InvalidStateException;
 
     /**
      * Choose ships layout.
@@ -77,4 +78,14 @@ public interface BattleshipsClient {
      * Shutdown the client workers and underlying connection.
      */
     void close();
+
+    /**
+     * Get next event.
+     * Blocks until any event happens.
+     *
+     * @return Next event.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws OfflineException If the underlying connection is lost before or during the call. Client session may be restored back.
+     */
+    Event getEvent() throws DisconnectedException, OfflineException;
 }

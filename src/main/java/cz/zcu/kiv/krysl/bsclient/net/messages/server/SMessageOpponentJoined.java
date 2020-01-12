@@ -16,7 +16,7 @@ public class SMessageOpponentJoined extends ServerMessage {
         return nickname;
     }
 
-    public static ServerMessage deserialize(PayloadDeserializer deserializer) throws DeserializeException {
+    public static SMessageOpponentJoined deserialize(PayloadDeserializer deserializer) throws DeserializeException {
         Nickname nickname = Nickname.deserialize(deserializer);
         return new SMessageOpponentJoined(nickname);
     }
