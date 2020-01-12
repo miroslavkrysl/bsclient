@@ -6,17 +6,19 @@ import cz.zcu.kiv.krysl.bsclient.net.client.responses.Response;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseDisconnected;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseMessage;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseOffline;
+import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResult;
 import cz.zcu.kiv.krysl.bsclient.net.codec.Deserializer;
 import cz.zcu.kiv.krysl.bsclient.net.codec.Serializer;
 import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
 import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageAlive;
 import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageLogin;
+import cz.zcu.kiv.krysl.bsclient.net.messages.client.CMessageRestoreSession;
 import cz.zcu.kiv.krysl.bsclient.net.messages.client.ClientMessage;
 import cz.zcu.kiv.krysl.bsclient.net.messages.server.SMessageLoginOk;
+import cz.zcu.kiv.krysl.bsclient.net.messages.server.SMessageRestoreSessionOk;
 import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
 import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessageKind;
-import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
-import cz.zcu.kiv.krysl.bsclient.net.types.SessionKey;
+import cz.zcu.kiv.krysl.bsclient.net.types.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Client {
+public class Client implements BattleshipsClient {
 
     private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(10);
     private static final Duration TIMEOUT_RECEIVE = TIMEOUT_ALIVE.dividedBy(2);
@@ -45,7 +47,7 @@ public class Client {
 
     private final AtomicReference<OfflineCause> offlineCause;
 
-    private final Thread receiverThread;
+    private Thread receiverThread;
 
     public Client(InetSocketAddress serverAddress, Nickname nickname) throws ConnectException {
         this.serverAddress = serverAddress;
@@ -80,6 +82,7 @@ public class Client {
             throw new ConnectException("Server disconnected too early: " + e.getMessage());
         } catch (InvalidStateException e) {
             // should not happen, server must be dumb
+            connection.close();
             throw new ConnectException("Server is responding incorrectly.");
         }
 
@@ -103,9 +106,7 @@ public class Client {
 
         while (!offline.get() && !disconnected.get()) {
             try {
-                System.out.print("recieving... ");
                 ServerMessage message = connection.receive();
-                System.out.println("recieved: " + message);
 
                 if (message == null) {
                     // receive timeout happened
@@ -205,7 +206,6 @@ public class Client {
         }
 
         connection.close();
-        System.out.println("receiving ended");
     }
 
     private void aliveRequest() {
@@ -217,7 +217,6 @@ public class Client {
         } catch (DisconnectedException | OfflineException | InvalidStateException e) {
             // don't care for this errors
         }
-        System.out.println("alive req ended");
     }
 
     private void handleInvalidMessage() throws OfflineException {
@@ -240,7 +239,12 @@ public class Client {
     private ServerMessage request(ClientMessage request) throws DisconnectedException, OfflineException, InvalidStateException {
         requestLock.lock();
 
-        checkOnline();
+        try {
+            checkOnline();
+        } catch (Exception e) {
+            requestLock.unlock();
+            throw e;
+        }
 
         // send request
         connection.send(request);
@@ -258,21 +262,106 @@ public class Client {
 
         if (response.isOffline()) {
             // no response because client went offline
+            requestLock.unlock();
             throw new OfflineException(offlineCause.get());
         }
 
         if (response.isDisconnected()) {
             // no response because the server disconnected
+            requestLock.unlock();
             throw new DisconnectedException("Server disconnected.");
         }
 
         ServerMessage message = ((ResponseMessage) response).getResponse();
 
         if (message.getKind() == ServerMessageKind.ILLEGAL_STATE) {
+            requestLock.unlock();
             throw new InvalidStateException("Action is illegal in the current client state.");
         }
 
         requestLock.unlock();
         return message;
+    }
+
+    @Override
+    public RestoreState restore() throws AlreadyOnlineException, ConnectException, DisconnectedException, OfflineException {
+        if (disconnected.get()) {
+            throw new DisconnectedException("Can't restore disconnected client.");
+        }
+
+        if (!offline.get()) {
+            throw new AlreadyOnlineException("Client is already online.");
+        }
+
+        // setup connection
+        try {
+            // create connection
+            connection = new Connection<>(serverAddress, new Deserializer(), new Serializer(), TIMEOUT_RECEIVE);
+            offline.set(false);
+            receiverThread = new Thread(this::runReceiving);
+            receiverThread.start();
+        } catch (IOException e) {
+            throw new ConnectException("Can't connect to the server: " + e.getMessage());
+        }
+
+        // restore session
+        ServerMessage response;
+
+        try {
+            response = request(new CMessageRestoreSession(sessionKey));
+        } catch (OfflineException e) {
+            throw new ConnectException("Connection closed too early: " + e.getMessage());
+        } catch (DisconnectedException e) {
+            throw new ConnectException("Server disconnected too early: " + e.getMessage());
+        } catch (InvalidStateException e) {
+            // should not happen, server must be dumb
+            connection.close();
+            throw new ConnectException("Server is responding incorrectly.");
+        }
+
+        switch (response.getKind()) {
+            case RESTORE_SESSION_OK:
+                SMessageRestoreSessionOk m = (SMessageRestoreSessionOk) response;
+                return m.getState();
+            case RESTORE_SESSION_FAIL:
+                disconnected.set(true);
+                connection.close();
+                throw new DisconnectedException("Session is expired.");
+            default:
+                // unexpected response
+                offlineCause.set(OfflineCause.INVALID_MESSAGE);
+                connection.close();
+                throw new OfflineException(offlineCause.get());
+        }
+    }
+
+    @Override
+    public boolean joinGame() throws DisconnectedException, OfflineException, InvalidStateException {
+        return false;
+    }
+
+    @Override
+    public boolean chooseLayout(Layout layout) throws DisconnectedException, OfflineException, InvalidStateException {
+        return false;
+    }
+
+    @Override
+    public ShootResult shoot(Position position) throws DisconnectedException, OfflineException, InvalidStateException {
+        return null;
+    }
+
+    @Override
+    public void leaveGame() throws DisconnectedException, OfflineException, InvalidStateException {
+
+    }
+
+    @Override
+    public void disconnect() throws DisconnectedException, OfflineException {
+
+    }
+
+    @Override
+    public void close() {
+
     }
 }
