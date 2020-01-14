@@ -381,7 +381,7 @@ public class Client implements BattleshipsClient {
         switch (response.getKind()) {
             case SHOOT_HIT:
                 return new ShootResultHit();
-            case SHOOT_MISS:
+            case SHOOT_MISSED:
                 return new ShootResultMiss();
             case SHOOT_SUNK:
                 SMessageShootSunk r = (SMessageShootSunk) response;

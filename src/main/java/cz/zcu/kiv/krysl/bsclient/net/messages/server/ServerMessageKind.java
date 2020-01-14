@@ -19,7 +19,7 @@ public enum ServerMessageKind {
 
     SHOOT_HIT,
     SHOOT_SUNK,
-    SHOOT_MISS,
+    SHOOT_MISSED,
 
     LEAVE_GAME_OK,
 
@@ -47,7 +47,7 @@ public enum ServerMessageKind {
             case LAYOUT_FAIL:
             case SHOOT_HIT:
             case SHOOT_SUNK:
-            case SHOOT_MISS:
+            case SHOOT_MISSED:
             case LEAVE_GAME_OK:
             case DISCONNECT_OK:
                 return true;

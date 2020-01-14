@@ -53,8 +53,8 @@ public class MessageDeserializer {
                 return ServerMessageKind.SHOOT_HIT;
             case "shoot_sunk":
                 return ServerMessageKind.SHOOT_SUNK;
-            case "shoot_miss":
-                return ServerMessageKind.SHOOT_MISS;
+            case "shoot_missed":
+                return ServerMessageKind.SHOOT_MISSED;
             case "leave_game_ok":
                 return ServerMessageKind.LEAVE_GAME_OK;
             case "disconnect_ok":

@@ -57,8 +57,8 @@ public abstract class ServerMessage {
             case SHOOT_SUNK:
                 message = SMessageShootSunk.deserialize(deserializer.getPayloadDeserializer());
                 break;
-            case SHOOT_MISS:
-                message = new SMessageShootMiss();
+            case SHOOT_MISSED:
+                message = new SMessageShootMissed();
                 break;
             case LEAVE_GAME_OK:
                 message = new SMessageLeaveGameOk();
