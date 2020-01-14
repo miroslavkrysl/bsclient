@@ -7,11 +7,17 @@ import cz.zcu.kiv.krysl.bsclient.net.types.ShipId;
 
 public class SMessageShootSunk extends ServerMessage {
 
+    private ShipId shipId;
     private final Placement placement;
 
     public SMessageShootSunk(ShipId shipId, Placement placement) {
         super(ServerMessageKind.SHOOT_SUNK);
+        this.shipId = shipId;
         this.placement = placement;
+    }
+
+    public ShipId getShipId() {
+        return shipId;
     }
 
     public Placement getPlacement() {

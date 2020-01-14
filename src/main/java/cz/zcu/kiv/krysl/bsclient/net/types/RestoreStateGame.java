@@ -8,13 +8,13 @@ public class RestoreStateGame extends RestoreState {
     private Who onTurn;
     private Hits playerBoard;
     private Hits opponentBoard;
-    private SunkShips sunkenShips;
+    private SunkShips sunkShips;
 
     public RestoreStateGame(Who onTurn, Hits playerBoard, Hits opponentBoard, SunkShips sunkenShips) {
         this.onTurn = onTurn;
         this.playerBoard = playerBoard;
         this.opponentBoard = opponentBoard;
-        this.sunkenShips = sunkenShips;
+        this.sunkShips = sunkenShips;
     }
 
     public Hits getPlayerBoard() {
@@ -25,8 +25,8 @@ public class RestoreStateGame extends RestoreState {
         return opponentBoard;
     }
 
-    public SunkShips getSunkenShips() {
-        return sunkenShips;
+    public SunkShips getSunkShips() {
+        return sunkShips;
     }
 
     public Who getOnTurn() {

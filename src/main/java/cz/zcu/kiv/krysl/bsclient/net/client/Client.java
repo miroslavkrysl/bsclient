@@ -385,7 +385,7 @@ public class Client implements BattleshipsClient {
                 return new ShootResultMiss();
             case SHOOT_SUNK:
                 SMessageShootSunk r = (SMessageShootSunk) response;
-                return new ShootResultSunk(r.getPlacement());
+                return new ShootResultSunk(r.getShipId(), r.getPlacement());
             default:
                 throw handleInvalidMessage();
         }

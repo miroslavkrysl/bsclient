@@ -12,11 +12,11 @@ public class Nickname implements ISerializableItem{
             throw new IllegalArgumentException("Nickname must have at least 3 chars");
         }
 
-        if (nickname.length() > 32) {
-            throw new IllegalArgumentException("Nickname must have at most 32 chars");
+        if (nickname.length() > 16) {
+            throw new IllegalArgumentException("Nickname must have at most 16 chars");
         }
 
-        if (!nickname.matches("[a-zA-Z0-9]+")) {
+        if (!nickname.chars().allMatch(c -> Character.isAlphabetic(c) || Character.isDigit(c))) {
             throw new IllegalArgumentException("Nickname must have only alphanumeric characters.");
         }
 
