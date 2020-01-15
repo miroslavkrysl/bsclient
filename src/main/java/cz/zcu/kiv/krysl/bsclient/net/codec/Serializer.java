@@ -24,11 +24,10 @@ public class Serializer implements ISerializer<ClientMessage> {
 
         String messageString = message.serialize();
 
-        // escape message end char
-        messageString = Helper.escapeChars(messageString, CHARS_TO_ESCAPE, Constants.ESCAPE);
+        // escape message end char and append it to the message end
+        messageString = Helper.escapeChars(messageString, CHARS_TO_ESCAPE, Constants.ESCAPE) + MESSAGE_END;
 
         serialized.writeBytes(encoding.encode(messageString).array());
-        serialized.writeBytes(encoding.encode(MESSAGE_END).array());
 
         return serialized.toByteArray();
     }
