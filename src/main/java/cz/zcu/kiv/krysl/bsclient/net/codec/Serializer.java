@@ -5,6 +5,7 @@ import cz.zcu.kiv.krysl.bsclient.net.messages.client.ClientMessage;
 import cz.zcu.kiv.krysl.bsclient.util.Helper;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class Serializer implements ISerializer<ClientMessage> {
@@ -27,7 +28,11 @@ public class Serializer implements ISerializer<ClientMessage> {
         // escape message end char and append it to the message end
         messageString = Helper.escapeChars(messageString, CHARS_TO_ESCAPE, Constants.ESCAPE) + MESSAGE_END;
 
-        serialized.writeBytes(encoding.encode(messageString).array());
+        ByteBuffer buf = encoding.encode(messageString);
+        byte[] encoded = new byte[buf.limit()];
+        buf.get(encoded);
+
+        serialized.writeBytes(encoded);
 
         return serialized.toByteArray();
     }
