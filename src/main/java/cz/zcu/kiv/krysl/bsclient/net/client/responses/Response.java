@@ -1,9 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.net.client.responses;
 
 public abstract class Response {
-    public final boolean isOffline() {
-        return this instanceof ResponseOffline;
-    }
 
     public final boolean isDisconnected() {
         return this instanceof ResponseDisconnected;

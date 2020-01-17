@@ -16,4 +16,6 @@ public interface IClientEventHandler {
     void handleOpponentHit(Position position);
 
     void handleGameOver(Who winner);
+
+    void handleDisconnected(ConnectionLossCause cause);
 }

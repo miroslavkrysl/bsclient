@@ -5,7 +5,6 @@ import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.Response;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseDisconnected;
 import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseMessage;
-import cz.zcu.kiv.krysl.bsclient.net.client.responses.ResponseOffline;
 import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResult;
 import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResultHit;
 import cz.zcu.kiv.krysl.bsclient.net.client.results.ShootResultMiss;
@@ -16,6 +15,8 @@ import cz.zcu.kiv.krysl.bsclient.net.connection.Connection;
 import cz.zcu.kiv.krysl.bsclient.net.messages.client.*;
 import cz.zcu.kiv.krysl.bsclient.net.messages.server.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -23,42 +24,36 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Client implements BattleshipsClient {
+    private static Logger logger = LogManager.getLogger(Client.class);
 
-    private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(10);
-    private static final Duration TIMEOUT_RECEIVE = TIMEOUT_ALIVE.dividedBy(2);
+    private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(3);
+//    private static final Duration TIMEOUT_RECEIVE = TIMEOUT_ALIVE.dividedBy(2);
+    private static final Duration TIMEOUT_RECEIVE = Duration.ofSeconds(1);
 
     private final IClientEventHandler eventHandler;
     private final InetSocketAddress serverAddress;
     private final SessionKey sessionKey;
 
-    private Connection<ServerMessage, ClientMessage> connection;
+    private final Connection<ServerMessage, ClientMessage> connection;
 
     private final ReentrantLock requestLock;
     private final BlockingQueue<Response> responseBox;
 
-    private final AtomicBoolean offline;
     private final AtomicBoolean disconnected;
 
-    private final AtomicReference<OfflineCause> offlineCause;
-
-    private Thread receiverThread;
+    private final Thread receiverThread;
+    private final RestoreState restoreState;
 
     public Client(InetSocketAddress serverAddress, Nickname nickname, IClientEventHandler eventHandler) throws ConnectException {
         this.eventHandler = eventHandler;
         this.serverAddress = serverAddress;
-
         this.requestLock = new ReentrantLock();
         this.responseBox = new SynchronousQueue<>();
-
-        this.offline = new AtomicBoolean(false);
         this.disconnected = new AtomicBoolean(false);
-
-        this.offlineCause = new AtomicReference<>(null);
-
+        this.restoreState = null;
 
         // setup connection
         try {
@@ -75,13 +70,11 @@ public class Client implements BattleshipsClient {
 
         try {
             response = request(new CMessageLogin(nickname));
-        } catch (OfflineException e) {
-            throw new ConnectException("Connection closed too early: " + e.getMessage());
         } catch (DisconnectedException e) {
-            throw new ConnectException("Server disconnected too early: " + e.getMessage());
+            throw new ConnectException("Connection lost too early: " + e.getMessage());
         } catch (InvalidStateException e) {
             // should not happen, server must be dumb
-            connection.close();
+            this.connection.close();
             throw new ConnectException("Server is responding incorrectly.");
         }
 
@@ -100,10 +93,68 @@ public class Client implements BattleshipsClient {
         }
     }
 
+    public Client(InetSocketAddress serverAddress, SessionKey sessionKey, IClientEventHandler eventHandler) throws ConnectException, DisconnectedException {
+        this.eventHandler = eventHandler;
+        this.serverAddress = serverAddress;
+        this.requestLock = new ReentrantLock();
+        this.responseBox = new SynchronousQueue<>();
+        this.disconnected = new AtomicBoolean(false);
+        this.sessionKey = sessionKey;
+
+        // setup connection
+        try {
+            // create connection
+            this.connection = new Connection<>(serverAddress, new Deserializer(), new Serializer(), TIMEOUT_RECEIVE);
+            this.receiverThread = new Thread(this::runReceiving);
+            this.receiverThread.start();
+        } catch (IOException e) {
+            throw new ConnectException("Can't connect to the server: " + e.getMessage());
+        }
+
+        // restore session
+        ServerMessage response;
+
+        try {
+            response = request(new CMessageRestoreSession(sessionKey));
+        } catch (DisconnectedException e) {
+            throw new ConnectException("Connection lost too early: " + e.getMessage());
+        } catch (InvalidStateException e) {
+            // should not happen, server must be dumb
+            this.connection.close();
+            throw new ConnectException("Server is responding incorrectly.");
+        }
+
+        switch (response.getKind()) {
+            case RESTORE_SESSION_OK:
+                SMessageRestoreSessionOk m = (SMessageRestoreSessionOk) response;
+                this.restoreState = m.getState();
+            case RESTORE_SESSION_FAIL:
+                this.disconnected.set(true);
+                this.connection.close();
+                throw new DisconnectedException("Session is expired.");
+            default:
+                // unexpected response
+                this.connection.close();
+                throw new ConnectException("Server is responding incorrectly.");
+        }
+    }
+
+    public SessionKey getSessionKey() {
+        return sessionKey;
+    }
+
+    public RestoreState getRestoreState() {
+        return restoreState;
+    }
+
+
     private void runReceiving() {
+        logger.info("starting client receiver thread");
         Instant lastReceived = Instant.now();
 
-        while (!offline.get() && !disconnected.get()) {
+        ConnectionLossCause connectionLossCause = null;
+
+        while (!disconnected.get()) {
             try {
                 ServerMessage message = connection.receive();
 
@@ -115,12 +166,15 @@ public class Client implements BattleshipsClient {
                     Duration elapsed = Duration.between(lastReceived, now);
 
                     if (elapsed.compareTo(TIMEOUT_ALIVE) >= 0) {
-                        // alive timeout happened
-                        offlineCause.set(OfflineCause.UNAVAILABLE);
-                        offline.set(true);
+                        // connection timeout happened
+                        disconnected.set(true);
+                        connectionLossCause = ConnectionLossCause.UNAVAILABLE;
+
+                        logger.warn("connection timed out");
+
                         if (!requestLock.tryLock()) {
                             // response expected
-                            responseBox.offer(new ResponseOffline());
+                            responseBox.offer(new ResponseDisconnected());
                         } else {
                             requestLock.unlock();
                         }
@@ -128,7 +182,7 @@ public class Client implements BattleshipsClient {
                     }
 
                     if (requestLock.tryLock()) {
-                        // no response expected -> send alive request
+                        // response not expected
                         new Thread(this::aliveRequest).start();
 
                         requestLock.unlock();
@@ -140,23 +194,29 @@ public class Client implements BattleshipsClient {
                 lastReceived = Instant.now();
 
                 if (message.isResponse()) {
+                    logger.trace("response received");
                     if (requestLock.tryLock()) {
-                        // response not expected
-                        offlineCause.set(OfflineCause.INVALID_MESSAGE);
-                        offline.set(true);
+                        logger.error("response not expected");
+                        disconnected.set(true);
+                        connectionLossCause = ConnectionLossCause.INVALID_MESSAGE;
+
                         requestLock.unlock();
                         break;
                     }
 
-                    // hand response to waiting request
+                    // hand response to the waiting request
                     responseBox.offer(new ResponseMessage(message));
                     continue;
                 }
 
+                logger.trace("notification received");
 
                 switch (message.getKind()) {
                     case DISCONNECT:
                         disconnected.set(true);
+                        connectionLossCause = ConnectionLossCause.SERVER_DISCONNECTED;
+
+                        logger.info("server sent disconnect notification");
 
                         if (!requestLock.tryLock()) {
                             // response expected
@@ -191,24 +251,26 @@ public class Client implements BattleshipsClient {
                 }
             } catch (DisconnectedException e) {
                 // stream closed
-                offlineCause.set(OfflineCause.CLOSED);
-                offline.set(true);
+                logger.warn("connection lost: " + e.getMessage());
+                disconnected.set(true);
+                connectionLossCause = ConnectionLossCause.CLOSED;
 
                 if (!requestLock.tryLock()) {
                     // response expected
-                    responseBox.offer(new ResponseOffline());
+                    responseBox.offer(new ResponseDisconnected());
                     break;
                 } else {
                     requestLock.unlock();
                 }
             } catch (DeserializeException e) {
                 // stream corrupted
-                offlineCause.set(OfflineCause.CORRUPTED);
-                offline.set(true);
+                logger.error("stream corrupted: " + e.getMessage());
+                disconnected.set(true);
+                connectionLossCause = ConnectionLossCause.CORRUPTED;
 
                 if (!requestLock.tryLock()) {
                     // response expected
-                    responseBox.offer(new ResponseOffline());
+                    responseBox.offer(new ResponseDisconnected());
                     break;
                 } else {
                     requestLock.unlock();
@@ -216,42 +278,50 @@ public class Client implements BattleshipsClient {
             }
         }
 
+        logger.info("closing the connection");
         connection.close();
+
+        if (connectionLossCause != null) {
+            // unwanted disconnection
+            logger.error("connection lost");
+            eventHandler.handleDisconnected(connectionLossCause);
+        }
+
+        logger.info("ending the client receiver thread");
     }
 
     private void aliveRequest() {
         try {
+            logger.trace("sending alive request");
             ServerMessage response = request(new CMessageAlive());
             if (response.getKind() != ServerMessageKind.ALIVE_OK) {
                 throw handleInvalidMessage();
             }
-        } catch (DisconnectedException | OfflineException | InvalidStateException e) {
+            logger.trace("alive response received");
+        } catch (DisconnectedException | InvalidStateException e) {
             // don't care for this errors
         }
     }
 
-    private OfflineException handleInvalidMessage() {
+    private DisconnectedException handleInvalidMessage() {
         this.connection.close();
-        this.offlineCause.set(OfflineCause.INVALID_MESSAGE);
-        this.offline.set(true);
+        this.disconnected.set(true);
 
-        return new OfflineException(this.offlineCause.get());
+        return new DisconnectedException("Invalid message was received");
     }
 
-    private void checkOnline() throws DisconnectedException, OfflineException {
+    private void checkConnected() throws DisconnectedException {
         if (disconnected.get()) {
             throw new DisconnectedException("Can't perform a request on disconnected client.");
         }
-        if (offline.get()) {
-            throw new OfflineException(offlineCause.get());
-        }
     }
 
-    private ServerMessage request(ClientMessage request) throws DisconnectedException, OfflineException, InvalidStateException {
+    private ServerMessage request(ClientMessage request) throws DisconnectedException, InvalidStateException {
         requestLock.lock();
+        logger.debug("request");
 
         try {
-            checkOnline();
+            checkConnected();
         } catch (Exception e) {
             requestLock.unlock();
             throw e;
@@ -271,12 +341,6 @@ public class Client implements BattleshipsClient {
             }
         }
 
-        if (response.isOffline()) {
-            // no response because client went offline
-            requestLock.unlock();
-            throw new OfflineException(offlineCause.get());
-        }
-
         if (response.isDisconnected()) {
             // no response because the server disconnected
             requestLock.unlock();
@@ -294,59 +358,9 @@ public class Client implements BattleshipsClient {
         return message;
     }
 
-    @Override
-    public RestoreState restore() throws AlreadyOnlineException, ConnectException, DisconnectedException, OfflineException {
-        if (disconnected.get()) {
-            throw new DisconnectedException("Can't restore disconnected client.");
-        }
-
-        if (!offline.get()) {
-            throw new AlreadyOnlineException("Client is already online.");
-        }
-
-        // setup connection
-        try {
-            // create connection
-            connection = new Connection<>(serverAddress, new Deserializer(), new Serializer(), TIMEOUT_RECEIVE);
-            offline.set(false);
-            receiverThread = new Thread(this::runReceiving);
-            receiverThread.start();
-        } catch (IOException e) {
-            throw new ConnectException("Can't connect to the server: " + e.getMessage());
-        }
-
-        // restore session
-        ServerMessage response;
-
-        try {
-            response = request(new CMessageRestoreSession(sessionKey));
-        } catch (OfflineException e) {
-            throw new ConnectException("Connection closed too early: " + e.getMessage());
-        } catch (DisconnectedException e) {
-            throw new ConnectException("Server disconnected too early: " + e.getMessage());
-        } catch (InvalidStateException e) {
-            // should not happen, server must be dumb
-            throw handleInvalidMessage();
-        }
-
-        switch (response.getKind()) {
-            case RESTORE_SESSION_OK:
-                SMessageRestoreSessionOk m = (SMessageRestoreSessionOk) response;
-                return m.getState();
-            case RESTORE_SESSION_FAIL:
-                disconnected.set(true);
-                connection.close();
-                throw new DisconnectedException("Session is expired.");
-            default:
-                // unexpected response
-                offlineCause.set(OfflineCause.INVALID_MESSAGE);
-                connection.close();
-                throw new OfflineException(offlineCause.get());
-        }
-    }
 
     @Override
-    public Nickname joinGame() throws DisconnectedException, OfflineException, InvalidStateException {
+    public Nickname joinGame() throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageJoinGame());
 
         switch (response.getKind()) {
@@ -361,7 +375,7 @@ public class Client implements BattleshipsClient {
     }
 
     @Override
-    public boolean chooseLayout(Layout layout) throws DisconnectedException, OfflineException, InvalidStateException {
+    public boolean chooseLayout(Layout layout) throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageLayout(layout));
 
         switch (response.getKind()) {
@@ -375,7 +389,7 @@ public class Client implements BattleshipsClient {
     }
 
     @Override
-    public ShootResult shoot(Position position) throws DisconnectedException, OfflineException, InvalidStateException {
+    public ShootResult shoot(Position position) throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageShoot(position));
 
         switch (response.getKind()) {
@@ -385,14 +399,14 @@ public class Client implements BattleshipsClient {
                 return new ShootResultMiss();
             case SHOOT_SUNK:
                 SMessageShootSunk r = (SMessageShootSunk) response;
-                return new ShootResultSunk(r.getShipId(), r.getPlacement());
+                return new ShootResultSunk(r.getShipKind(), r.getPlacement());
             default:
                 throw handleInvalidMessage();
         }
     }
 
     @Override
-    public void leaveGame() throws DisconnectedException, OfflineException, InvalidStateException {
+    public void leaveGame() throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageLeaveGame());
 
         if (response.getKind() != ServerMessageKind.LEAVE_GAME_OK) {
@@ -401,11 +415,11 @@ public class Client implements BattleshipsClient {
     }
 
     @Override
-    public void disconnect() throws DisconnectedException, OfflineException {
+    public void disconnect() throws DisconnectedException {
         try {
-            ServerMessage response = request(new CMessageDisconnect());
+            ServerMessage response = request(new CMessageLogout());
 
-            if (response.getKind() != ServerMessageKind.DISCONNECT_OK) {
+            if (response.getKind() != ServerMessageKind.LOGOUT_OK) {
                 throw handleInvalidMessage();
             }
 

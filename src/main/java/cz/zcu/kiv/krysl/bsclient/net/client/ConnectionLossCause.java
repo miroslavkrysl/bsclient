@@ -3,11 +3,16 @@ package cz.zcu.kiv.krysl.bsclient.net.client;
 /**
  * Enum containing causes of offline state.
  */
-public enum OfflineCause {
+public enum ConnectionLossCause {
     /**
      * Connection stream was closed either by remote point or by OS.
      */
     CLOSED,
+
+    /**
+     * Server has sent a disconnection message.
+     */
+    SERVER_DISCONNECTED,
 
     /**
      * Messages couldn't be properly deserialized from the connection stream.
