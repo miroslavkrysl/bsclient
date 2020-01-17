@@ -54,8 +54,8 @@ public class MessageSerializer {
             case LEAVE_GAME:
                 header = "leave_game";
                 break;
-            case DISCONNECT:
-                header = "disconnect";
+            case LOGOUT:
+                header = "logout";
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + kind);

@@ -1,8 +1,8 @@
 package cz.zcu.kiv.krysl.bsclient.net.messages.server;
 
-public class SMessageReconnectFail extends ServerMessage {
+public class SMessageRestoreSessionFail extends ServerMessage {
 
-    SMessageReconnectFail() {
+    SMessageRestoreSessionFail() {
         super(ServerMessageKind.RESTORE_SESSION_FAIL);
     }
 }

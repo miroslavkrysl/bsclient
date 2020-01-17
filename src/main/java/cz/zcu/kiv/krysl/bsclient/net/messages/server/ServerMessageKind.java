@@ -23,7 +23,7 @@ public enum ServerMessageKind {
 
     LEAVE_GAME_OK,
 
-    DISCONNECT_OK,
+    LOGOUT_OK,
 
     DISCONNECT,
     OPPONENT_JOINED,
@@ -49,7 +49,7 @@ public enum ServerMessageKind {
             case SHOOT_SUNK:
             case SHOOT_MISSED:
             case LEAVE_GAME_OK:
-            case DISCONNECT_OK:
+            case LOGOUT_OK:
                 return true;
             case DISCONNECT:
             case OPPONENT_JOINED:

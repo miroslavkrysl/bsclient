@@ -31,7 +31,7 @@ public abstract class ServerMessage {
                 message = SMessageRestoreSessionOk.deserialize(deserializer.getPayloadDeserializer());
                 break;
             case RESTORE_SESSION_FAIL:
-                message = new SMessageReconnectFail();
+                message = new SMessageRestoreSessionFail();
                 break;
             case LOGIN_OK:
                 message = SMessageLoginOk.deserializeFromPayload(deserializer.getPayloadDeserializer());
@@ -63,8 +63,8 @@ public abstract class ServerMessage {
             case LEAVE_GAME_OK:
                 message = new SMessageLeaveGameOk();
                 break;
-            case DISCONNECT_OK:
-                message = new SMessageDisconnectOk();
+            case LOGOUT_OK:
+                message = new SMessageLogoutOk();
                 break;
             case DISCONNECT:
                 message = new SMessageDisconnect();

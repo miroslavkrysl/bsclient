@@ -8,5 +8,5 @@ public enum  ClientMessageKind {
     LAYOUT,
     SHOOT,
     LEAVE_GAME,
-    DISCONNECT
+    LOGOUT
 }

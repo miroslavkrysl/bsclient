@@ -57,8 +57,8 @@ public class MessageDeserializer {
                 return ServerMessageKind.SHOOT_MISSED;
             case "leave_game_ok":
                 return ServerMessageKind.LEAVE_GAME_OK;
-            case "disconnect_ok":
-                return ServerMessageKind.DISCONNECT_OK;
+            case "logout_ok":
+                return ServerMessageKind.LOGOUT_OK;
             case "disconnect":
                 return ServerMessageKind.DISCONNECT;
             case "opponent_joined":
