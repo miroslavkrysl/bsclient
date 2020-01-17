@@ -1,60 +1,71 @@
 package cz.zcu.kiv.krysl.bsclient;
 
-import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
-import cz.zcu.kiv.krysl.bsclient.net.client.AlreadyOnlineException;
-import cz.zcu.kiv.krysl.bsclient.net.client.Client;
-import cz.zcu.kiv.krysl.bsclient.net.client.ConnectException;
-import cz.zcu.kiv.krysl.bsclient.net.client.OfflineException;
+import cz.zcu.kiv.krysl.bsclient.gui.LoginPane;
+import cz.zcu.kiv.krysl.bsclient.net.client.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
-import cz.zcu.kiv.krysl.bsclient.net.types.RestoreState;
+import cz.zcu.kiv.krysl.bsclient.net.types.Position;
+import cz.zcu.kiv.krysl.bsclient.net.types.Who;
 import javafx.application.Application;
-import javafx.application.Platform;
+import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.net.InetSocketAddress;
+import java.util.logging.LogManager;
 
-public class Main extends Application {
+
+public class Main extends Application implements IClientEventHandler {
+
+    private Client client;
 
     public static void main(String[] args) {
+        System.setProperty("log4j.configurationFile", "log4jconfig.xml");
         launch(args);
     }
 
     @Override
     public void start(Stage primaryStage) {
+        primaryStage.setTitle("Battleships Game");
+        primaryStage.setMinHeight(480);
+        primaryStage.setMinWidth(640);
 
-        try {
-            Client client = new Client(new InetSocketAddress("localhost", 20000), new Nickname("freddy"));
-            System.out.println("logged");
+        LoginPane loginPane = new LoginPane(new App(primaryStage));
 
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        primaryStage.setScene(new Scene(loginPane));
+        primaryStage.show();
+    }
 
-            while (true) {
-                try {
-                    RestoreState state = client.restore();
-                    System.out.println("restored: " + state.getClass().getName());
-                    break;
-                } catch (AlreadyOnlineException | OfflineException | ConnectException e) {
-                    System.out.println(e.getMessage());
-                } catch (DisconnectedException e) {
-                    System.out.println("Disconnected");
-                    break;
-                }
+    @Override
+    public void handleOpponentJoined(Nickname nickname) {
+        System.out.println("handleOpponentJoined");
+    }
 
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+    @Override
+    public void handleOpponentReady() {
+        System.out.println("handleOpponentReady");
+    }
 
-        } catch (ConnectException e) {
-            System.out.println(e.getMessage());
-        }
+    @Override
+    public void handleOpponentLeft() {
+        System.out.println("handleOpponentLeft");
+    }
 
-        Platform.exit();
+    @Override
+    public void handleOpponentMissed(Position position) {
+        System.out.println("handleOpponentMissed");
+    }
+
+    @Override
+    public void handleOpponentHit(Position position) {
+        System.out.println("handleOpponentHit");
+    }
+
+    @Override
+    public void handleGameOver(Who winner) {
+        System.out.println("handleGameOver");
+    }
+
+    @Override
+    public void handleDisconnected(ConnectionLossCause cause) {
+        System.out.println("handleDisconnected");
     }
 }
