@@ -10,13 +10,11 @@ public abstract class RestoreState {
 
         switch (state) {
             case "lobby":
-                return new RestoreStateLobby();
+                return RestoreStateLobby.deserialize(deserializer);
             case "game":
                 return RestoreStateGame.deserialize(deserializer);
-            case "game_over":
-                return RestoreStateGameOver.deserialize(deserializer);
             default:
-                throw new DeserializeException("Can't deserialize ReconnectedState from payload.");
+                throw new DeserializeException("Can't deserialize RestoreState from payload.");
         }
     }
 
@@ -26,9 +24,5 @@ public abstract class RestoreState {
 
     public boolean isGame() {
         return this instanceof RestoreStateGame;
-    }
-
-    public boolean isGameOver() {
-        return this instanceof RestoreStateGameOver;
     }
 }
