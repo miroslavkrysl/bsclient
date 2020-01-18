@@ -10,7 +10,7 @@ public abstract class RestoreState {
 
         switch (state) {
             case "lobby":
-                return RestoreStateLobby.deserialize(deserializer);
+                return new RestoreStateLobby();
             case "game":
                 return RestoreStateGame.deserialize(deserializer);
             default:

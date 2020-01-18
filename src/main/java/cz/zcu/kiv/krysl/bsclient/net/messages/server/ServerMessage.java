@@ -27,17 +27,17 @@ public abstract class ServerMessage {
             case ALIVE_OK:
                 message = new SMessageAliveOk();
                 break;
-            case RESTORE_SESSION_OK:
-                message = SMessageRestoreSessionOk.deserialize(deserializer.getPayloadDeserializer());
-                break;
-            case RESTORE_SESSION_FAIL:
-                message = new SMessageRestoreSessionFail();
-                break;
             case LOGIN_OK:
-                message = SMessageLoginOk.deserializeFromPayload(deserializer.getPayloadDeserializer());
+                message = new SMessageLoginOk();
                 break;
-            case LOGIN_FAIL:
-                message = new SMessageLoginFail();
+            case LOGIN_FULL:
+                message = new SMessageLoginFull();
+                break;
+            case LOGIN_TAKEN:
+                message = new SMessageLoginTaken();
+                break;
+            case LOGIN_RESTORED:
+                message = SMessageLoginRestored.deserialize(deserializer.getPayloadDeserializer());
                 break;
             case JOIN_GAME_WAIT:
                 message = new SMessageJoinGameWait();

@@ -33,14 +33,14 @@ public class MessageDeserializer {
                 return ServerMessageKind.ILLEGAL_STATE;
             case "alive_ok":
                 return ServerMessageKind.ALIVE_OK;
-            case "restore_session_ok":
-                return ServerMessageKind.RESTORE_SESSION_OK;
-            case "restore_session_fail":
-                return ServerMessageKind.RESTORE_SESSION_FAIL;
             case "login_ok":
                 return ServerMessageKind.LOGIN_OK;
-            case "login_fail":
-                return ServerMessageKind.LOGIN_FAIL;
+            case "login_full":
+                return ServerMessageKind.LOGIN_FULL;
+            case "login_taken":
+                return ServerMessageKind.LOGIN_TAKEN;
+            case "login_restored":
+                return ServerMessageKind.LOGIN_RESTORED;
             case "join_game_wait":
                 return ServerMessageKind.JOIN_GAME_WAIT;
             case "join_game_ok":

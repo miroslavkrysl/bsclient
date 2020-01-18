@@ -35,7 +35,6 @@ public class Client implements BattleshipsClient {
 
     private final IClientEventHandler eventHandler;
     private final InetSocketAddress serverAddress;
-    private final SessionKey sessionKey;
 
     private final Connection<ServerMessage, ClientMessage> connection;
 
@@ -53,7 +52,6 @@ public class Client implements BattleshipsClient {
         this.requestLock = new ReentrantLock();
         this.responseBox = new SynchronousQueue<>();
         this.disconnected = new AtomicBoolean(false);
-        this.restoreState = null;
 
         // setup connection
         try {
@@ -80,67 +78,23 @@ public class Client implements BattleshipsClient {
 
         switch (response.getKind()) {
             case LOGIN_OK:
-                SMessageLoginOk m = (SMessageLoginOk) response;
-                this.sessionKey = m.getSessionKey();
+                this.restoreState = null;
                 break;
-            case LOGIN_FAIL:
+            case LOGIN_FULL:
                 this.connection.close();
                 throw new ConnectException("Server is full.");
-            default:
-                // unexpected response
+            case LOGIN_TAKEN:
                 this.connection.close();
-                throw new ConnectException("Server is responding incorrectly.");
-        }
-    }
-
-    public Client(InetSocketAddress serverAddress, SessionKey sessionKey, IClientEventHandler eventHandler) throws ConnectException, DisconnectedException {
-        this.eventHandler = eventHandler;
-        this.serverAddress = serverAddress;
-        this.requestLock = new ReentrantLock();
-        this.responseBox = new SynchronousQueue<>();
-        this.disconnected = new AtomicBoolean(false);
-        this.sessionKey = sessionKey;
-
-        // setup connection
-        try {
-            // create connection
-            this.connection = new Connection<>(serverAddress, new Deserializer(), new Serializer(), TIMEOUT_RECEIVE);
-            this.receiverThread = new Thread(this::runReceiving);
-            this.receiverThread.start();
-        } catch (IOException e) {
-            throw new ConnectException("Can't connect to the server: " + e.getMessage());
-        }
-
-        // restore session
-        ServerMessage response;
-
-        try {
-            response = request(new CMessageRestoreSession(sessionKey));
-        } catch (DisconnectedException e) {
-            throw new ConnectException("Connection lost too early: " + e.getMessage());
-        } catch (InvalidStateException e) {
-            // should not happen, server must be dumb
-            this.connection.close();
-            throw new ConnectException("Server is responding incorrectly.");
-        }
-
-        switch (response.getKind()) {
-            case RESTORE_SESSION_OK:
-                SMessageRestoreSessionOk m = (SMessageRestoreSessionOk) response;
+                throw new ConnectException("Nickname is taken.");
+            case LOGIN_RESTORED:
+                SMessageLoginRestored m = (SMessageLoginRestored) response;
                 this.restoreState = m.getState();
-            case RESTORE_SESSION_FAIL:
-                this.disconnected.set(true);
-                this.connection.close();
-                throw new DisconnectedException("Session is expired.");
+                break;
             default:
                 // unexpected response
                 this.connection.close();
                 throw new ConnectException("Server is responding incorrectly.");
         }
-    }
-
-    public SessionKey getSessionKey() {
-        return sessionKey;
     }
 
     public RestoreState getRestoreState() {
