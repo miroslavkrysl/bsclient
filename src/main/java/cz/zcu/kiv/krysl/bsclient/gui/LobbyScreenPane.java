@@ -1,36 +1,38 @@
 package cz.zcu.kiv.krysl.bsclient.gui;
 
-import cz.zcu.kiv.krysl.bsclient.net.client.Client;
-import cz.zcu.kiv.krysl.bsclient.net.client.ConnectionLossCause;
+import cz.zcu.kiv.krysl.bsclient.App;
 import cz.zcu.kiv.krysl.bsclient.net.client.IClientEventHandler;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
 import cz.zcu.kiv.krysl.bsclient.net.types.Position;
 import cz.zcu.kiv.krysl.bsclient.net.types.Who;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-public class LobbyScenePane extends BorderPane implements IClientEventHandler {
+public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
 
-    private Client client;
+    private App app;
+    private boolean waitingForGame;
     private Button joinGameButton;
     private Button logoutButton;
     private ProgressIndicator progressIndicator;
-    private LoginPane loginPane;
-    private Alert disconnectedAlert;
     private Label addressValueLabel;
     private Label nicknameValueLabel;
+    private Button stopWaitingButton;
 
-    public LobbyScenePane(LoginPane loginPane, Client client) {
-        this.loginPane = loginPane;
-        this.client = client;
+    public LobbyScreenPane(App app) {
+        this.app = app;
+        this.waitingForGame = false;
+
+        app.getClient().setEventHandler(this);
+
         createUi();
         bindUi();
     }
@@ -75,6 +77,10 @@ public class LobbyScenePane extends BorderPane implements IClientEventHandler {
         // leave game button
         Button logoutButton = new Button("Logout");
 
+        // stop waiting button
+        Button stopWaitingButton = new Button("Stop waiting");
+        stopWaitingButton.setVisible(false);
+
         // progress indicator
         ProgressIndicator progressIndicator = new ProgressIndicator(ProgressIndicator.INDETERMINATE_PROGRESS);
         progressIndicator.setMaxSize(30, 30);
@@ -87,33 +93,31 @@ public class LobbyScenePane extends BorderPane implements IClientEventHandler {
         centerVBox.getChildren().add(joinGameButton);
         centerVBox.getChildren().add(logoutButton);
         centerVBox.getChildren().add(progressIndicator);
+        centerVBox.getChildren().add(stopWaitingButton);
 
         setTop(heading);
         setCenter(centerVBox);
-
-        this.disconnectedAlert = new Alert(Alert.AlertType.ERROR, "", new ButtonType("Go back", ButtonBar.ButtonData.OK_DONE));
-        this.disconnectedAlert.setHeaderText("Network error");
-        this.disconnectedAlert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
 
 
         this.addressValueLabel = addressValueLabel;
         this.nicknameValueLabel = nicknameValueLabel;
         this.joinGameButton = joinGameButton;
         this.logoutButton = logoutButton;
+        this.stopWaitingButton = stopWaitingButton;
         this.progressIndicator = progressIndicator;
     }
 
     private void bindUi() {
-        addressValueLabel.setText(client.getServerAddress().toString());
-        nicknameValueLabel.setText(client.getNickname().getValue());
+        addressValueLabel.setText(app.getClient().getServerAddress().toString());
+        nicknameValueLabel.setText(app.getClient().getNickname().getValue());
 
-        // --- Connect button
+        // --- Logout button ---
         logoutButton.setOnAction(e -> {
 
             Task<Void> logoutTask = new Task<>() {
                 @Override
                 protected Void call() throws Exception {
-                    client.disconnect();
+                    app.getClient().disconnect();
                     return null;
                 }
             };
@@ -122,58 +126,98 @@ public class LobbyScenePane extends BorderPane implements IClientEventHandler {
             joinGameButton.setDisable(true);
             logoutButton.setDisable(true);
 
-            logoutTask.setOnSucceeded(event -> {
+            logoutTask.setOnSucceeded(event -> app.goToLoginScreen());
+
+            new Thread(logoutTask).start();
+        });
+
+        // --- Join game button ---
+        joinGameButton.setOnAction(e -> {
+
+            Task<Nickname> joinGameTask = new Task<>() {
+                @Override
+                protected Nickname call() throws Exception {
+                    return app.getClient().joinGame();
+                }
+            };
+
+            progressIndicator.setVisible(true);
+            joinGameButton.setDisable(true);
+            logoutButton.setDisable(true);
+
+            joinGameTask.setOnSucceeded(event -> {
+                Nickname opponent = (Nickname) event.getSource().getValue();
+
+                if (opponent == null) {
+                    waitingForGame = true;
+                    stopWaitingButton.setDisable(false);
+                    stopWaitingButton.setVisible(true);
+                    return;
+                }
+
+                app.goToLayoutScreen(opponent);
+            });
+
+            new Thread(joinGameTask).start();
+        });
+
+        // --- Stop waiting button ---
+        stopWaitingButton.setOnAction(e -> {
+
+            Task<Void> stopWaitingTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    app.getClient().leaveGame();
+                    return null;
+                }
+            };
+
+            stopWaitingButton.setDisable(true);
+
+            stopWaitingTask.setOnSucceeded(event -> {
+                waitingForGame = false;
                 progressIndicator.setVisible(false);
                 joinGameButton.setDisable(false);
                 logoutButton.setDisable(false);
-                getScene().setRoot(loginPane);
+                stopWaitingButton.setDisable(false);
+                stopWaitingButton.setVisible(false);
             });
 
-            logoutTask.setOnFailed(event -> {
-                disconnectedAlert.setContentText(event.getSource().getException().getMessage());
-                disconnectedAlert.showAndWait();
-
-                progressIndicator.setVisible(true);
-                joinGameButton.setDisable(true);
-                logoutButton.setDisable(true);
-            });
-
-            new Thread(logoutTask).start();
+            new Thread(stopWaitingTask).start();
         });
     }
 
     @Override
-    public void handleOpponentJoined(Nickname nickname) {
+    public void handleOpponentJoined(Nickname opponent) {
+        if (waitingForGame) {
+            waitingForGame = false;
 
+            Platform.runLater(() -> app.goToLayoutScreen(opponent));
+        }
     }
 
     @Override
     public void handleOpponentReady() {
-
+        // not interested
     }
 
     @Override
     public void handleOpponentLeft() {
-
+        // not interested
     }
 
     @Override
     public void handleOpponentMissed(Position position) {
-
+        // not interested
     }
 
     @Override
     public void handleOpponentHit(Position position) {
-
+        // not interested
     }
 
     @Override
     public void handleGameOver(Who winner) {
-
-    }
-
-    @Override
-    public void handleDisconnected(ConnectionLossCause cause) {
-        System.out.println("disconnected: " + cause.toString());
+        // not interested
     }
 }

@@ -42,9 +42,6 @@ public class LayoutBoardPane extends BoardPane {
                     int col = (int)(((cell.getLayoutX() + event.getX()) / size) * 10);
                     int row = (int)(((cell.getLayoutY() + event.getY()) / size) * 10);
 
-                    System.out.println(event.getX() + " " + event.getY());
-                    System.out.println(row + " " + col);
-
                     if (col < 0) {
                         col = 0;
                     }

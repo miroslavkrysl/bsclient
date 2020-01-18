@@ -1,5 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.gui;
 
+import cz.zcu.kiv.krysl.bsclient.App;
 import cz.zcu.kiv.krysl.bsclient.net.client.Client;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
 import javafx.concurrent.Task;
@@ -11,20 +12,25 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
 
 import java.net.InetSocketAddress;
 
-public class LoginPane extends BorderPane {
+public class LoginScreenPane extends BorderPane {
+
+    private Stage stage;
+    private App app;
 
     private TextField addressTextField;
     private PortTextField portTextField;
     private TextField nicknameTextField;
     private Button connectButton;
     private ProgressIndicator connectProgressIndicator;
-
     private Alert alert;
 
-    public LoginPane() {
+    public LoginScreenPane(Stage stage) {
+        this.stage = stage;
+
         createUi();
         bindUi();
     }
@@ -133,11 +139,13 @@ public class LoginPane extends BorderPane {
             connectProgressIndicator.setVisible(true);
             connectButton.setDisable(true);
 
-            LoginPane loginPane = this;
+            LoginScreenPane loginPane = this;
             connectTask.setOnSucceeded(event -> {
                 Client client = (Client) event.getSource().getValue();
-                LobbyScenePane lobbyPane = new LobbyScenePane(loginPane, client);
-                loginPane.getScene().setRoot(lobbyPane);
+
+                this.app = new App(stage, this, client);
+                client.setDisconnectionHandlerHandler(app);
+                this.app.goToLobbyScreen();
 
                 connectProgressIndicator.setVisible(false);
                 connectButton.setDisable(false);
