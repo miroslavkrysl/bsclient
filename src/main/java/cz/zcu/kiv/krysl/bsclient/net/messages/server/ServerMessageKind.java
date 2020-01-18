@@ -27,6 +27,7 @@ public enum ServerMessageKind {
     DISCONNECT,
     OPPONENT_JOINED,
     OPPONENT_READY,
+    OPPONENT_OFFLINE,
     OPPONENT_LEFT,
     OPPONENT_MISSED,
     OPPONENT_HIT,
@@ -53,6 +54,7 @@ public enum ServerMessageKind {
             case DISCONNECT:
             case OPPONENT_JOINED:
             case OPPONENT_READY:
+            case OPPONENT_OFFLINE:
             case OPPONENT_LEFT:
             case OPPONENT_MISSED:
             case OPPONENT_HIT:

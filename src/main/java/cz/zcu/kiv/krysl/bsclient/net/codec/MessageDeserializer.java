@@ -65,6 +65,8 @@ public class MessageDeserializer {
                 return ServerMessageKind.OPPONENT_JOINED;
             case "opponent_ready":
                 return ServerMessageKind.OPPONENT_READY;
+            case "opponent_offline":
+                return ServerMessageKind.OPPONENT_OFFLINE;
             case "opponent_left":
                 return ServerMessageKind.OPPONENT_LEFT;
             case "opponent_missed":

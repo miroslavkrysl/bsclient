@@ -75,6 +75,9 @@ public abstract class ServerMessage {
             case OPPONENT_READY:
                 message = new SMessageOpponentReady();
                 break;
+            case OPPONENT_OFFLINE:
+                message = new SMessageOpponentOffline();
+                break;
             case OPPONENT_LEFT:
                 message = new SMessageOpponentLeft();
                 break;

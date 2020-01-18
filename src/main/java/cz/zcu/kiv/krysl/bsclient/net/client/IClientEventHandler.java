@@ -9,6 +9,8 @@ public interface IClientEventHandler {
 
     void handleOpponentReady();
 
+    void handleOpponentOffline();
+
     void handleOpponentLeft();
 
     void handleOpponentMissed(Position position);

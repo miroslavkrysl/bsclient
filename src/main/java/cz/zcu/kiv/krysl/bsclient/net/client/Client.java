@@ -26,7 +26,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Client implements BattleshipsClient {
+public class Client {
     private static Logger logger = LogManager.getLogger(Client.class);
 
     private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(4);
@@ -221,6 +221,9 @@ public class Client implements BattleshipsClient {
                     case OPPONENT_READY:
                         eventHandler.handleOpponentReady();
                         break;
+                    case OPPONENT_OFFLINE:
+                        eventHandler.handleOpponentOffline();
+                        break;
                     case OPPONENT_LEFT:
                         eventHandler.handleOpponentLeft();
                         break;
@@ -347,7 +350,13 @@ public class Client implements BattleshipsClient {
     }
 
 
-    @Override
+    /**
+     * Join a game.
+     *
+     * @return Nickname of the opponent if already in the game or null if must wait for the opponent to join.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws InvalidStateException If the request is illegal in the current connection state, or the state was changed during the call.
+     */
     public Nickname joinGame() throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageJoinGame());
 
@@ -362,7 +371,14 @@ public class Client implements BattleshipsClient {
         }
     }
 
-    @Override
+    /**
+     * Choose ships layout.
+     *
+     * @param layout The layout to choose.
+     * @return True if the layout is accepted, false otherwise.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws InvalidStateException If the request is illegal in the current connection state, or the state was changed during the call.
+     */
     public boolean chooseLayout(Layout layout) throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageLayout(layout));
 
@@ -376,7 +392,14 @@ public class Client implements BattleshipsClient {
         }
     }
 
-    @Override
+    /**
+     * Shoot.
+     *
+     * @param position The target position.
+     * @return Result of shooting.
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws InvalidStateException If the request is illegal in the current connection state, or the state was changed during the call.
+     */
     public ShootResult shoot(Position position) throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageShoot(position));
 
@@ -393,7 +416,12 @@ public class Client implements BattleshipsClient {
         }
     }
 
-    @Override
+    /**
+     * Leave the game.
+     *
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     * @throws InvalidStateException If the request is illegal in the current connection state, or the state was changed during the call.
+     */
     public void leaveGame() throws DisconnectedException, InvalidStateException {
         ServerMessage response = request(new CMessageLeaveGame());
 
@@ -402,7 +430,12 @@ public class Client implements BattleshipsClient {
         }
     }
 
-    @Override
+    /**
+     * Properly disconnect from the server.
+     * The session is terminated.
+     *
+     * @throws DisconnectedException If the client is disconnected before or during the call.
+     */
     public void disconnect() throws DisconnectedException {
         try {
             ServerMessage response = request(new CMessageLogout());
@@ -418,7 +451,9 @@ public class Client implements BattleshipsClient {
         }
     }
 
-    @Override
+    /**
+     * Shutdown the client workers and underlying connection.
+     */
     public void close() {
         disconnected.set(true);
         connection.close();
