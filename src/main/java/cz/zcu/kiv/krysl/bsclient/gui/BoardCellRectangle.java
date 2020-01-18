@@ -40,24 +40,20 @@ public class BoardCellRectangle extends Rectangle {
             if (hit) {
                 setFill(Color.LIGHTCORAL);
                 setStroke(Color.LIGHTGRAY);
-                setOpacity(1);
             }
             else {
                 setFill(Color.WHITE);
                 setStroke(Color.LIGHTGRAY);
-                setOpacity(1);
             }
         }
         else {
             if (hit) {
                 setFill(Color.LIGHTCORAL);
                 setStroke(Color.LIGHTCORAL);
-                setOpacity(1);
             }
             else {
                 setFill(Color.GREEN);
                 setStroke(Color.GREEN);
-                setOpacity(0.3);
             }
         }
     }

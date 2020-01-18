@@ -198,26 +198,31 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
 
     @Override
     public void handleOpponentReady() {
-        // not interested
+        // should not happen
+    }
+
+    @Override
+    public void handleOpponentOffline() {
+        // should not happen
     }
 
     @Override
     public void handleOpponentLeft() {
-        // not interested
+        // should not happen
     }
 
     @Override
     public void handleOpponentMissed(Position position) {
-        // not interested
+        // should not happen
     }
 
     @Override
     public void handleOpponentHit(Position position) {
-        // not interested
+        // should not happen
     }
 
     @Override
     public void handleGameOver(Who winner) {
-        // not interested
+        // should not happen
     }
 }

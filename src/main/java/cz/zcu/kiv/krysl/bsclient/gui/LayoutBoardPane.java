@@ -39,8 +39,8 @@ public class LayoutBoardPane extends BoardPane {
 
                     BoardCellRectangle cell = (BoardCellRectangle) event.getSource();
 
-                    int col = (int)(((cell.getLayoutX() + event.getX()) / size) * 10);
-                    int row = (int)(((cell.getLayoutY() + event.getY()) / size) * 10);
+                    int col = (int)Math.floor(((cell.getLayoutX() + event.getX()) / size) * 10);
+                    int row = (int)Math.floor(((cell.getLayoutY() + event.getY()) / size) * 10);
 
                     if (col < 0) {
                         col = 0;
