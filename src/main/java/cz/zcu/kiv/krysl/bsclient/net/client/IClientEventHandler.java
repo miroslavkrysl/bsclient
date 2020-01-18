@@ -5,7 +5,7 @@ import cz.zcu.kiv.krysl.bsclient.net.types.Position;
 import cz.zcu.kiv.krysl.bsclient.net.types.Who;
 
 public interface IClientEventHandler {
-    void handleOpponentJoined(Nickname nickname);
+    void handleOpponentJoined(Nickname opponent);
 
     void handleOpponentReady();
 
@@ -16,6 +16,4 @@ public interface IClientEventHandler {
     void handleOpponentHit(Position position);
 
     void handleGameOver(Who winner);
-
-    void handleDisconnected(ConnectionLossCause cause);
 }

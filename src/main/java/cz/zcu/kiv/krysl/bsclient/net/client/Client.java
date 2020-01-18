@@ -29,15 +29,16 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Client implements BattleshipsClient {
     private static Logger logger = LogManager.getLogger(Client.class);
 
-    private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(3);
-//    private static final Duration TIMEOUT_RECEIVE = TIMEOUT_ALIVE.dividedBy(2);
+    private static final Duration TIMEOUT_ALIVE = Duration.ofSeconds(4);
     private static final Duration TIMEOUT_RECEIVE = Duration.ofSeconds(1);
 
+    private IClientDisconnectionHandler disconnectionHandler;
     private IClientEventHandler eventHandler;
     private final InetSocketAddress serverAddress;
 
     private final Connection<ServerMessage, ClientMessage> connection;
 
+    private final AtomicBoolean expectingResponse;
     private final ReentrantLock requestLock;
     private final BlockingQueue<Response> responseBox;
 
@@ -50,7 +51,9 @@ public class Client implements BattleshipsClient {
     public Client(InetSocketAddress serverAddress, Nickname nickname) throws ConnectException {
         this.nickname = nickname;
         this.eventHandler = null;
+        this.disconnectionHandler = null;
         this.serverAddress = serverAddress;
+        this.expectingResponse = new AtomicBoolean(false);
         this.requestLock = new ReentrantLock();
         this.responseBox = new SynchronousQueue<>();
         this.disconnected = new AtomicBoolean(false);
@@ -103,8 +106,12 @@ public class Client implements BattleshipsClient {
         return restoreState;
     }
 
-    public void setEvenHandler(IClientEventHandler eventHandler) {
+    public void setEventHandler(IClientEventHandler eventHandler) {
         this.eventHandler = eventHandler;
+    }
+
+    public void setDisconnectionHandlerHandler(IClientDisconnectionHandler disconnectionHandler) {
+        this.disconnectionHandler = disconnectionHandler;
     }
 
     public InetSocketAddress getServerAddress() {
@@ -141,7 +148,14 @@ public class Client implements BattleshipsClient {
 
                         if (!requestLock.tryLock()) {
                             // response expected
-                            responseBox.offer(new ResponseDisconnected());
+                            while (true) {
+                                try {
+                                    responseBox.put(new ResponseDisconnected());
+                                    break;
+                                } catch (InterruptedException e) {
+                                    // repeat
+                                }
+                            }
                         } else {
                             requestLock.unlock();
                         }
@@ -172,7 +186,14 @@ public class Client implements BattleshipsClient {
                     }
 
                     // hand response to the waiting request
-                    responseBox.offer(new ResponseMessage(message));
+                    while (true) {
+                        try {
+                            responseBox.put(new ResponseMessage(message));
+                            break;
+                        } catch (InterruptedException e) {
+                            // repeat
+                        }
+                    }
                     continue;
                 }
 
@@ -251,8 +272,8 @@ public class Client implements BattleshipsClient {
         if (connectionLossCause != null) {
             // unwanted disconnection
             logger.error("connection lost");
-            if (eventHandler != null) {
-                eventHandler.handleDisconnected(connectionLossCause);
+            if (disconnectionHandler != null) {
+                disconnectionHandler.handleDisconnected(connectionLossCause);
             }
         }
 
@@ -261,12 +282,10 @@ public class Client implements BattleshipsClient {
 
     private void aliveRequest() {
         try {
-            logger.trace("sending alive request");
             ServerMessage response = request(new CMessageAlive());
             if (response.getKind() != ServerMessageKind.ALIVE_OK) {
                 throw handleInvalidMessage();
             }
-            logger.trace("alive response received");
         } catch (DisconnectedException | InvalidStateException e) {
             // don't care for this errors
         }
@@ -287,7 +306,7 @@ public class Client implements BattleshipsClient {
 
     private ServerMessage request(ClientMessage request) throws DisconnectedException, InvalidStateException {
         requestLock.lock();
-        logger.debug("request");
+        logger.debug("request: " + request);
 
         try {
             checkConnected();
@@ -393,7 +412,6 @@ public class Client implements BattleshipsClient {
             }
 
             disconnected.set(true);
-            connection.close();
         } catch (InvalidStateException e) {
             // should not happen, server must be dumb
             throw handleInvalidMessage();

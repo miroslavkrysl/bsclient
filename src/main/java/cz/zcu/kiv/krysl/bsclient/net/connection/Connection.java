@@ -2,6 +2,9 @@ package cz.zcu.kiv.krysl.bsclient.net.connection;
 
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
+import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +28,7 @@ import java.util.Queue;
  */
 public class Connection<MessageIn, MessageOut> implements IMessageInputStream<MessageIn>, IMessageOutputStream<MessageOut> {
 
+    private static Logger logger = LogManager.getLogger(Connection.class);
     private static final int BUFFER_SIZE = 1024;
 
     private final InputStream inputStream;
@@ -91,6 +95,7 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
      * Close the connection.
      */
     synchronized public void close()  {
+        logger.trace("closing the connection");
         try {
             socket.close();
         } catch (IOException e) {
@@ -118,6 +123,8 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
             throw new DisconnectedException("Can't send a message to a disconnected connection.");
         }
 
+        logger.debug("sending message: " + message);
+
         byte[] serialized = serializer.serialize(message);
 
         try {
@@ -143,7 +150,9 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
 
         while (true) {
             if (!incomingQueue.isEmpty()) {
-                return incomingQueue.poll();
+                MessageIn message = incomingQueue.poll();
+                logger.debug("received message: " + message);
+                return message;
             }
 
             if (isDisconnected()) {
