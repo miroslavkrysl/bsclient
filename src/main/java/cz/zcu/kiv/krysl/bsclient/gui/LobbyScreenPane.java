@@ -155,7 +155,7 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
                     return;
                 }
 
-                app.goToLayoutScreen(opponent);
+                app.goToLayoutScreen(opponent, false);
             });
 
             new Thread(joinGameTask).start();
@@ -192,7 +192,7 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
         if (waitingForGame) {
             waitingForGame = false;
 
-            Platform.runLater(() -> app.goToLayoutScreen(opponent));
+            Platform.runLater(() -> app.goToLayoutScreen(opponent, true));
         }
     }
 

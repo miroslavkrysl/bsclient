@@ -53,12 +53,12 @@ public class App implements IClientDisconnectionHandler{
         stage.getScene().setRoot(new LobbyScreenPane(this));
     }
 
-    public void goToLayoutScreen(Nickname opponent) {
-        stage.getScene().setRoot(new LayoutScreenPane(this, opponent));
+    public void goToLayoutScreen(Nickname opponent, boolean onTurn) {
+        stage.getScene().setRoot(new LayoutScreenPane(this, opponent, onTurn));
     }
 
-    public void goToGameScreen(Nickname opponent, Layout layout) {
-        stage.getScene().setRoot(new LobbyScreenPane(this));
+    public void goToGameScreen(Nickname opponent, Layout layout, boolean onTurn) {
+        stage.getScene().setRoot(new GameScreenPane(this, opponent, layout, onTurn));
     }
 
     public void goToGameScreen(RestoreStateGame restoreState) {

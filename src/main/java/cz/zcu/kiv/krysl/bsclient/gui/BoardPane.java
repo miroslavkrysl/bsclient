@@ -9,10 +9,11 @@ import java.util.Map;
 
 public class BoardPane extends Pane {
     protected BoardCellRectangle[][] cells;
+    protected static final double SIZE = 400;
     protected final double size;
 
-    public BoardPane(double size) {
-        this.size = size;
+    public BoardPane() {
+        this.size = SIZE;
         createUi();
     }
 
@@ -40,13 +41,17 @@ public class BoardPane extends Pane {
         }
     }
 
-    protected void markShips(Map<ShipKind, Placement> placements) {
+    protected BoardCellRectangle getCell(Position position) {
+        return cells[position.getRow()][position.getCol()];
+    }
+
+    protected void markShips(Map<ShipKind, Placement> placements, boolean sunk) {
         for (Map.Entry<ShipKind, Placement> entry : placements.entrySet()){
-            markShip(entry.getKey(), entry.getValue());
+            markShip(entry.getKey(), entry.getValue(), sunk);
         }
     }
 
-    protected void markShip(ShipKind shipKind, Placement placement) {
+    protected void markShip(ShipKind shipKind, Placement placement, boolean sunk) {
         int cells = shipKind.getNumberOfCells();
         int row = placement.getPosition().getRow();
         int col = placement.getPosition().getCol();
@@ -80,7 +85,7 @@ public class BoardPane extends Pane {
                 continue;
             }
 
-            this.cells[row][col].mark(shipKind, false);
+            this.cells[row][col].mark(shipKind, sunk);
 
             row += incR;
             col += incC;

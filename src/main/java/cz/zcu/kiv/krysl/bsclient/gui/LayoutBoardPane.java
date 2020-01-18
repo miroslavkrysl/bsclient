@@ -4,23 +4,35 @@ import cz.zcu.kiv.krysl.bsclient.net.types.Layout;
 import cz.zcu.kiv.krysl.bsclient.net.types.Orientation;
 import cz.zcu.kiv.krysl.bsclient.net.types.Position;
 import cz.zcu.kiv.krysl.bsclient.net.types.ShipKind;
+import javafx.scene.Cursor;
 import javafx.scene.input.MouseButton;
 
 public class LayoutBoardPane extends BoardPane {
     private Layout layout;
     private ShipKind dragging;
 
-    public LayoutBoardPane(Layout layout, double size) {
-        super(size);
+    public LayoutBoardPane(Layout layout) {
+        super();
         this.layout = layout;
 
-        markShips(layout.getPlacements());
+        markShips(layout.getPlacements(), false);
         bindUi();
     }
 
     private void bindUi() {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
+                cells[i][j].setOnMouseEntered(event -> {
+                    BoardCellRectangle cell = (BoardCellRectangle) event.getSource();
+
+                    if (cell.getShipKind() != null) {
+                        setCursor(Cursor.OPEN_HAND);
+                    }
+                });
+                cells[i][j].setOnMouseExited(event -> {
+                    BoardCellRectangle cell = (BoardCellRectangle) event.getSource();
+                    setCursor(Cursor.DEFAULT);
+                });
                 cells[i][j].setOnMousePressed(event -> {
                     if (event.getButton().equals(MouseButton.PRIMARY)) {
                         BoardCellRectangle cell = (BoardCellRectangle) event.getSource();
@@ -36,6 +48,8 @@ public class LayoutBoardPane extends BoardPane {
                     if (dragging == null) {
                         return;
                     }
+
+                    setCursor(Cursor.CLOSED_HAND);
 
                     BoardCellRectangle cell = (BoardCellRectangle) event.getSource();
 
@@ -57,7 +71,12 @@ public class LayoutBoardPane extends BoardPane {
 
                     this.layout.getPlacement(dragging).setPosition(new Position(row, col));
                     clear();
-                    markShips(layout.getPlacements());
+                    markShips(layout.getPlacements(), false);
+                });
+                cells[i][j].setOnDragExited(event -> {
+                    BoardCellRectangle cell = (BoardCellRectangle) event.getSource();
+
+                    setCursor(Cursor.DEFAULT);
                 });
                 cells[i][j].setOnMouseClicked(event -> {
                     if (event.getButton().equals(MouseButton.SECONDARY)) {
@@ -72,7 +91,7 @@ public class LayoutBoardPane extends BoardPane {
                         Orientation orientation = this.layout.getPlacement(kind).getOrientation();
                         this.layout.getPlacement(kind).setOrientation(orientation.rotateRight());
                         clear();
-                        markShips(layout.getPlacements());
+                        markShips(layout.getPlacements(), false);
                     }
                 });
             }

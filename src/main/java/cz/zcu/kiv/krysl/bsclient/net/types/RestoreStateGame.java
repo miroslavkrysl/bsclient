@@ -29,6 +29,10 @@ public class RestoreStateGame extends RestoreState {
         return playerBoard;
     }
 
+    public Layout getLayout() {
+        return layout;
+    }
+
     public Hits getOpponentBoard() {
         return opponentBoard;
     }

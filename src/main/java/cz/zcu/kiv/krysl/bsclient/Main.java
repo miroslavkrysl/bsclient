@@ -19,7 +19,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Battleships Game");
 
-        primaryStage.setWidth(600);
+        primaryStage.setWidth(1000);
         primaryStage.setHeight(600);
 
         LoginScreenPane loginPane = new LoginScreenPane(primaryStage);

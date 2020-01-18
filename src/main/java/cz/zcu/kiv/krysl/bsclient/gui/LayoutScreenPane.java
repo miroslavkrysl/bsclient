@@ -7,6 +7,7 @@ import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
 import cz.zcu.kiv.krysl.bsclient.net.types.Position;
 import cz.zcu.kiv.krysl.bsclient.net.types.Who;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
@@ -26,11 +27,19 @@ public class LayoutScreenPane extends BorderPane implements IClientEventHandler 
     private final Layout layout;
     private BoardPane board;
     private Nickname opponent;
+    private boolean onTurn;
+    private Button leaveGameButton;
+    private Button chooseLayoutButton;
+    private boolean ready;
+    private Label heading;
 
-    public LayoutScreenPane(App app, Nickname opponent) {
+    public LayoutScreenPane(App app, Nickname opponent, boolean onTurn) {
         this.app = app;
         this.opponent = opponent;
+        this.onTurn = onTurn;
         this.layout = Layout.createDefault();
+
+        this.ready = false;
 
         app.getClient().setEventHandler(this);
 
@@ -48,7 +57,7 @@ public class LayoutScreenPane extends BorderPane implements IClientEventHandler 
         heading.setMaxWidth(Double.MAX_VALUE);
         heading.setPadding(new Insets(0, 0, 10, 0));
 
-        this.board = new LayoutBoardPane(this.layout, 400);
+        this.board = new LayoutBoardPane(this.layout);
 
         Button leaveGameButton = new Button("Leave game");
         Button chooseLayoutButton = new Button("Confirm the layout selection");
@@ -60,10 +69,69 @@ public class LayoutScreenPane extends BorderPane implements IClientEventHandler 
         setTop(heading);
         setCenter(this.board);
         setBottom(buttonHBox);
+
+        this.leaveGameButton = leaveGameButton;
+        this.chooseLayoutButton = chooseLayoutButton;
+        this.heading = heading;
     }
 
     private void bindUi() {
+        this.leaveGameButton.setOnAction(e -> {
+            Task<Void> leaveGameTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    app.getClient().leaveGame();
+                    return null;
+                }
+            };
 
+            leaveGameButton.setDisable(true);
+            chooseLayoutButton.setDisable(true);
+            board.setDisable(true);
+
+            leaveGameTask.setOnSucceeded(event -> {
+                app.goToLobbyScreen();
+            });
+
+            new Thread(leaveGameTask).start();
+        });
+
+        this.chooseLayoutButton.setOnAction(e -> {
+            Task<Boolean> chooseLayoutTask = new Task<>() {
+                @Override
+                protected Boolean call() throws Exception {
+                    return app.getClient().chooseLayout(layout);
+                }
+            };
+
+            leaveGameButton.setDisable(true);
+            chooseLayoutButton.setDisable(true);
+            board.setDisable(true);
+
+            chooseLayoutTask.setOnSucceeded(event -> {
+                Boolean isLayoutValid = (Boolean) event.getSource().getValue();
+
+                if (isLayoutValid) {
+                    if (!ready) {
+                        leaveGameButton.setDisable(false);
+                        ready = true;
+                        heading.setText("Waiting for opponent to be ready ");
+                    } else {
+                        app.goToGameScreen(opponent, layout, onTurn);
+                    }
+                } else {
+                    leaveGameButton.setDisable(false);
+                    chooseLayoutButton.setDisable(false);
+                    board.setDisable(false);
+
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "", ButtonType.OK);
+                    alert.setHeaderText("Layout is invalid!");
+                    alert.showAndWait();
+                }
+            });
+
+            new Thread(chooseLayoutTask).start();
+        });
     }
 
     @Override
@@ -73,7 +141,13 @@ public class LayoutScreenPane extends BorderPane implements IClientEventHandler 
 
     @Override
     public void handleOpponentReady() {
-        // TODO: implement opponent ready
+        Platform.runLater(() -> {
+            if (!ready) {
+                ready = true;
+            } else {
+                app.goToGameScreen(opponent, layout, onTurn);
+            }
+        });
     }
 
     @Override
@@ -85,6 +159,7 @@ public class LayoutScreenPane extends BorderPane implements IClientEventHandler 
     public void handleOpponentLeft() {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Opponent left the game", ButtonType.OK);
+            alert.setHeaderText("Game ended");
             alert.showAndWait();
             app.goToLobbyScreen();
         });
