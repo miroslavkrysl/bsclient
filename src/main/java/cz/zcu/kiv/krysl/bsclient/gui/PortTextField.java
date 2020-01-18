@@ -15,6 +15,9 @@ public class PortTextField extends TextField {
     }
 
     public Integer getPort() {
+        if (getText().isEmpty()) {
+            return null;
+        }
         return Integer.parseUnsignedInt(getText());
     }
 

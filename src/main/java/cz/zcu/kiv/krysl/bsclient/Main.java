@@ -28,7 +28,7 @@ public class Main extends Application implements IClientEventHandler {
         primaryStage.setMinHeight(480);
         primaryStage.setMinWidth(640);
 
-        LoginPane loginPane = new LoginPane(new App(primaryStage));
+        LoginPane loginPane = new LoginPane();
 
         primaryStage.setScene(new Scene(loginPane));
         primaryStage.show();

@@ -10,11 +10,9 @@ import cz.zcu.kiv.krysl.bsclient.net.types.Who;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -22,7 +20,6 @@ import javafx.scene.text.FontWeight;
 import java.net.InetSocketAddress;
 
 public class LoginPane extends BorderPane implements IClientEventHandler {
-    private final App app;
 
     private TextField addressTextField;
     private PortTextField portTextField;
@@ -30,8 +27,9 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
     private Button connectButton;
     private ProgressIndicator connectProgressIndicator;
 
-    public LoginPane(App app) {
-        this.app = app;
+    private Alert alert;
+
+    public LoginPane() {
         createUi();
         bindUi();
     }
@@ -42,7 +40,7 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
         // --- Heading ---
         HeadingLabel heading = new HeadingLabel();
 
-        // --- Left connect form ---
+        // --- Connect form ---
         VBox connectVBox = new VBox();
         connectVBox.setFillWidth(false);
         connectVBox.setAlignment(Pos.CENTER);
@@ -65,7 +63,7 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
         VBox portVBox = new VBox();
         portVBox.setAlignment(Pos.CENTER);
         Label portLabel = new Label("Port");
-        PortTextField portTextField = new PortTextField(8919);
+        PortTextField portTextField = new PortTextField(8191);
         portTextField.setAlignment(Pos.CENTER);
         portVBox.getChildren().add(portLabel);
         portVBox.getChildren().add(portTextField);
@@ -98,6 +96,10 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
         setCenter(connectVBox);
 
 
+        this.alert = new Alert(Alert.AlertType.ERROR, "", ButtonType.OK);
+        this.alert.setHeaderText("Can't connect");
+        this.alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+
         this.addressTextField = addressTextField;
         this.portTextField = portTextField;
         this.nicknameTextField = nicknameTextField;
@@ -106,36 +108,52 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
     }
 
     private void bindUi() {
-        // --- Port text field ---
-
-
         // --- Connect button
         connectButton.setOnAction(e -> {
-            InetSocketAddress socketAddress = new InetSocketAddress(
-                    addressTextField.getText(),
-                    portTextField.getPort());
-            Nickname nickname = new Nickname(nicknameTextField.getText());
+            Integer port = portTextField.getPort();
+            String address = addressTextField.getText();
 
-            LoginPane t = this;
+            if (port == null) {
+                alert.setContentText("No port given.");
+                alert.showAndWait();
+                return;
+            }
 
-            Task<Client> connectTask = new Task<Client>() {
+            Nickname nickname;
+            try {
+                nickname = new Nickname(nicknameTextField.getText());
+            } catch (IllegalArgumentException exception) {
+                alert.setContentText(exception.getMessage());
+                alert.showAndWait();
+                return;
+            }
+
+            InetSocketAddress socketAddress = new InetSocketAddress(address, port);
+
+            Task<Client> connectTask = new Task<>() {
                 @Override
                 protected Client call() throws Exception {
-
-                    return new Client(socketAddress, nickname, t);
+                    return new Client(socketAddress, nickname);
                 }
             };
 
             connectProgressIndicator.setVisible(true);
             connectButton.setDisable(true);
 
+            LoginPane loginPane = this;
             connectTask.setOnSucceeded(event -> {
+                Client client = (Client) event.getSource().getValue();
+                LobbyPane lobbyPane = new LobbyPane(loginPane, client);
+                loginPane.getScene().setRoot(lobbyPane);
+
                 connectProgressIndicator.setVisible(false);
                 connectButton.setDisable(false);
             });
 
             connectTask.setOnFailed(event -> {
-                connectButton.setText("fail");
+                alert.setContentText(event.getSource().getException().getMessage());
+                alert.showAndWait();
+
                 connectProgressIndicator.setVisible(false);
                 connectButton.setDisable(false);
             });

@@ -33,7 +33,7 @@ public class Client implements BattleshipsClient {
 //    private static final Duration TIMEOUT_RECEIVE = TIMEOUT_ALIVE.dividedBy(2);
     private static final Duration TIMEOUT_RECEIVE = Duration.ofSeconds(1);
 
-    private final IClientEventHandler eventHandler;
+    private IClientEventHandler eventHandler;
     private final InetSocketAddress serverAddress;
 
     private final Connection<ServerMessage, ClientMessage> connection;
@@ -45,9 +45,11 @@ public class Client implements BattleshipsClient {
 
     private final Thread receiverThread;
     private final RestoreState restoreState;
+    private Nickname nickname;
 
-    public Client(InetSocketAddress serverAddress, Nickname nickname, IClientEventHandler eventHandler) throws ConnectException {
-        this.eventHandler = eventHandler;
+    public Client(InetSocketAddress serverAddress, Nickname nickname) throws ConnectException {
+        this.nickname = nickname;
+        this.eventHandler = null;
         this.serverAddress = serverAddress;
         this.requestLock = new ReentrantLock();
         this.responseBox = new SynchronousQueue<>();
@@ -101,6 +103,17 @@ public class Client implements BattleshipsClient {
         return restoreState;
     }
 
+    public void setEvenHandler(IClientEventHandler eventHandler) {
+        this.eventHandler = eventHandler;
+    }
+
+    public InetSocketAddress getServerAddress() {
+        return this.serverAddress;
+    }
+
+    public Nickname getNickname() {
+        return this.nickname;
+    }
 
     private void runReceiving() {
         logger.info("starting client receiver thread");
@@ -238,7 +251,9 @@ public class Client implements BattleshipsClient {
         if (connectionLossCause != null) {
             // unwanted disconnection
             logger.error("connection lost");
-            eventHandler.handleDisconnected(connectionLossCause);
+            if (eventHandler != null) {
+                eventHandler.handleDisconnected(connectionLossCause);
+            }
         }
 
         logger.info("ending the client receiver thread");
