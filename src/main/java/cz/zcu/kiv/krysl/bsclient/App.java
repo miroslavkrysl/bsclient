@@ -140,14 +140,17 @@ public class App implements IClientDisconnectionHandler{
 
                 setUp(client);
 
-                Platform.runLater(alert::close);
+                Platform.runLater(() -> {
+                    cancelReconnecting.set(true);
+                    alert.close();
+                });
             });
 
             new Thread(reconnectionTask).start();
 
             alert.showAndWait().ifPresent(response -> {
-                cancelReconnecting.set(true);
-                if (response == ButtonType.CANCEL) {
+                if (!cancelReconnecting.get()) {
+                    cancelReconnecting.set(true);
                     goToLoginScreen();
                 }
             });
