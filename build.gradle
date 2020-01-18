@@ -1,6 +1,7 @@
 plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.8'
+    id 'org.beryx.jlink' version '2.12.0'
 }
 
 group 'cz.zcu.kiv.krysl'
@@ -13,6 +14,13 @@ javafx {
     modules = [ 'javafx.controls']
 }
 
+jlink {
+    launcher {
+        name = 'hellofx'
+    }
+    forceMerge('log4j-api')
+}
+
 mainClassName = 'cz.zcu.kiv.krysl.bsclient.Main'
 
 repositories {
@@ -21,4 +29,8 @@ repositories {
 
 dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.0'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.7'
+//    runtimeOnly "org.openjfx:javafx-graphics:$javafx.version:win"
+//    runtimeOnly "org.openjfx:javafx-graphics:$javafx.version:linux"
+//    runtimeOnly "org.openjfx:javafx-graphics:$javafx.version:mac"
 }
