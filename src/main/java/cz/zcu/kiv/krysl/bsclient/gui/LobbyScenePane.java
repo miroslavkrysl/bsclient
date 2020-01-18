@@ -17,7 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-public class LobbyPane extends BorderPane implements IClientEventHandler {
+public class LobbyScenePane extends BorderPane implements IClientEventHandler {
 
     private Client client;
     private Button joinGameButton;
@@ -28,7 +28,7 @@ public class LobbyPane extends BorderPane implements IClientEventHandler {
     private Label addressValueLabel;
     private Label nicknameValueLabel;
 
-    public LobbyPane(LoginPane loginPane, Client client) {
+    public LobbyScenePane(LoginPane loginPane, Client client) {
         this.loginPane = loginPane;
         this.client = client;
         createUi();

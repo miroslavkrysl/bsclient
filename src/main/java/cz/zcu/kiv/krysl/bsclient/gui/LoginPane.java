@@ -1,6 +1,5 @@
 package cz.zcu.kiv.krysl.bsclient.gui;
 
-import cz.zcu.kiv.krysl.bsclient.App;
 import cz.zcu.kiv.krysl.bsclient.net.client.Client;
 import cz.zcu.kiv.krysl.bsclient.net.client.ConnectionLossCause;
 import cz.zcu.kiv.krysl.bsclient.net.client.IClientEventHandler;
@@ -143,7 +142,7 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
             LoginPane loginPane = this;
             connectTask.setOnSucceeded(event -> {
                 Client client = (Client) event.getSource().getValue();
-                LobbyPane lobbyPane = new LobbyPane(loginPane, client);
+                LobbyScenePane lobbyPane = new LobbyScenePane(loginPane, client);
                 loginPane.getScene().setRoot(lobbyPane);
 
                 connectProgressIndicator.setVisible(false);

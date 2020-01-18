@@ -5,7 +5,7 @@ import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadDeserializer;
 import cz.zcu.kiv.krysl.bsclient.net.codec.PayloadSerializer;
 
 public class Placement implements ISerializableItem {
-    private final Position position;
+    private Position position;
     private Orientation orientation;
 
     public Placement(Position position, Orientation orientation) {
@@ -19,6 +19,14 @@ public class Placement implements ISerializableItem {
 
     public Orientation getOrientation() {
         return orientation;
+    }
+
+    public void setOrientation(Orientation orientation) {
+        this.orientation = orientation;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
     }
 
     @Override

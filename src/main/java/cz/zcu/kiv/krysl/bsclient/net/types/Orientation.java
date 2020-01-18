@@ -30,6 +30,21 @@ public enum Orientation implements ISerializableItem {
         }
     }
 
+    public Orientation rotateRight() {
+        switch (this) {
+            case EAST:
+                return SOUTH;
+            case NORTH:
+                return EAST;
+            case WEST:
+                return NORTH;
+            case SOUTH:
+                return WEST;
+            default:
+                throw new IllegalStateException("Unexpected value: " + this);
+        }
+    }
+
     public static Orientation deserialize(PayloadDeserializer deserializer) throws DeserializeException {
         switch (deserializer.getString()) {
             case "east":

@@ -11,9 +11,26 @@ public enum ShipKind implements ISerializableItem {
     DESTROYER,
     PATROL_BOAT;
 
+    public int getNumberOfCells() {
+        switch (this) {
+            case AIRCRAFT_CARRIER:
+                return 5;
+            case BATTLESHIP:
+                return 4;
+            case CRUISER:
+                return 3;
+            case DESTROYER:
+                return 2;
+            case PATROL_BOAT:
+                return 1;
+            default:
+                throw new IllegalStateException("Unexpected value: " + this);
+        }
+    }
+
     public static ShipKind deserialize(PayloadDeserializer deserializer) throws DeserializeException {
         switch (deserializer.getString()) {
-            case "AC":
+            case "A":
                 return AIRCRAFT_CARRIER;
             case "B":
                 return BATTLESHIP;
@@ -42,6 +59,9 @@ public enum ShipKind implements ISerializableItem {
                 break;
             case DESTROYER:
                 serializer.addString("D");
+                break;
+            case PATROL_BOAT:
+                serializer.addString("P");
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + this);
