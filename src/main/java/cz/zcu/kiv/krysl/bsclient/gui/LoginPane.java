@@ -1,11 +1,7 @@
 package cz.zcu.kiv.krysl.bsclient.gui;
 
 import cz.zcu.kiv.krysl.bsclient.net.client.Client;
-import cz.zcu.kiv.krysl.bsclient.net.client.ConnectionLossCause;
-import cz.zcu.kiv.krysl.bsclient.net.client.IClientEventHandler;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
-import cz.zcu.kiv.krysl.bsclient.net.types.Position;
-import cz.zcu.kiv.krysl.bsclient.net.types.Who;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -18,7 +14,7 @@ import javafx.scene.text.FontWeight;
 
 import java.net.InetSocketAddress;
 
-public class LoginPane extends BorderPane implements IClientEventHandler {
+public class LoginPane extends BorderPane {
 
     private TextField addressTextField;
     private PortTextField portTextField;
@@ -45,7 +41,7 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
         connectVBox.setAlignment(Pos.CENTER);
         connectVBox.setSpacing(10);
 
-        // heading
+        // connect heading
         Label connectLabel = new Label("Connect to a server");
         connectLabel.setFont(Font.font(null, FontWeight.BOLD, 16));
 
@@ -82,7 +78,6 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
         connectProgressIndicator.setMaxSize(30, 30);
         connectProgressIndicator.setVisible(false);
 
-
         // add all to connectVBox
         connectVBox.getChildren().add(connectLabel);
         connectVBox.getChildren().add(addressVBox);
@@ -93,7 +88,6 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
 
         setTop(heading);
         setCenter(connectVBox);
-
 
         this.alert = new Alert(Alert.AlertType.ERROR, "", ButtonType.OK);
         this.alert.setHeaderText("Can't connect");
@@ -159,40 +153,5 @@ public class LoginPane extends BorderPane implements IClientEventHandler {
 
             new Thread(connectTask).start();
         });
-    }
-
-    @Override
-    public void handleOpponentJoined(Nickname nickname) {
-
-    }
-
-    @Override
-    public void handleOpponentReady() {
-
-    }
-
-    @Override
-    public void handleOpponentLeft() {
-
-    }
-
-    @Override
-    public void handleOpponentMissed(Position position) {
-
-    }
-
-    @Override
-    public void handleOpponentHit(Position position) {
-
-    }
-
-    @Override
-    public void handleGameOver(Who winner) {
-
-    }
-
-    @Override
-    public void handleDisconnected(ConnectionLossCause cause) {
-
     }
 }

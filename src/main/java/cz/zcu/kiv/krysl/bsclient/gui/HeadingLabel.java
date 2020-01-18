@@ -1,5 +1,6 @@
 package cz.zcu.kiv.krysl.bsclient.gui;
 
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.text.Font;
@@ -11,6 +12,7 @@ public class HeadingLabel extends Label {
     public HeadingLabel() {
         super("Battleships Game");
 
+        setPadding(new Insets(0, 0, 10, 0));
         setTextAlignment(TextAlignment.CENTER);
         setAlignment(Pos.CENTER);
         setMaxWidth(Double.MAX_VALUE);
