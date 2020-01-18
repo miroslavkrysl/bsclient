@@ -14,31 +14,36 @@ public class PortTextField extends TextField {
         setText("" + port);
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return Integer.parseUnsignedInt(getText());
     }
 
     private void bindListener() {
         textProperty().addListener((observable, oldPort, newPort) -> {
-            boolean setOld = false;
+            String toSet = newPort;
+
+            if (newPort.isEmpty()) {
+                return;
+            }
 
             if (!newPort.matches("\\d*")) {
-                setOld = true;
+                toSet = oldPort;
             } else {
                 try {
                     int port = Integer.parseUnsignedInt(newPort);
-                    if (port > 65535 || port < 0) {
-                        setOld = true;
+                    if (port > 65535) {
+                        toSet = "65535";
+                    }
+                    if (port < 0) {
+                        toSet = "0";
                     }
                 }
                 catch (NumberFormatException e) {
-                    setOld = true;
+                    toSet = oldPort;
                 }
             }
 
-            if (setOld) {
-                ((TextField) observable).setText(oldPort);
-            }
+            setText(toSet);
         });
     }
 }
