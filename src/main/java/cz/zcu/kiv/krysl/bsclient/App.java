@@ -4,6 +4,7 @@ import cz.zcu.kiv.krysl.bsclient.gui.GameScreenPane;
 import cz.zcu.kiv.krysl.bsclient.gui.LayoutScreenPane;
 import cz.zcu.kiv.krysl.bsclient.gui.LobbyScreenPane;
 import cz.zcu.kiv.krysl.bsclient.gui.LoginScreenPane;
+import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
 import cz.zcu.kiv.krysl.bsclient.net.client.*;
 import cz.zcu.kiv.krysl.bsclient.net.types.Layout;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
@@ -28,6 +29,16 @@ public class App implements IClientDisconnectionHandler{
         this.stage = stage;
         this.loginScreen = loginScreen;
         setUp(client);
+
+        stage.setOnCloseRequest(event -> {
+            try {
+                client.disconnect();
+            } catch (DisconnectedException e) {
+                // doesn't matter
+            }
+
+            Platform.exit();
+        });
     }
 
     public Client getClient() {
