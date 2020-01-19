@@ -5,18 +5,18 @@ import cz.zcu.kiv.krysl.bsclient.net.types.ShipKind;
 
 public class ShootResultSunk extends ShootResult{
     private ShipKind shipKind;
-    private Placement sunkShip;
+    private Placement placement;
 
-    public ShootResultSunk(ShipKind shipKind, Placement sunkShip) {
+    public ShootResultSunk(ShipKind shipKind, Placement placement) {
         this.shipKind = shipKind;
-        this.sunkShip = sunkShip;
+        this.placement = placement;
     }
 
     public ShipKind getShipKind() {
         return shipKind;
     }
 
-    public Placement getSunkShip() {
-        return sunkShip;
+    public Placement getPlacement() {
+        return placement;
     }
 }

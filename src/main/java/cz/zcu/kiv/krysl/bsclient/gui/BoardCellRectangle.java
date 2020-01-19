@@ -9,22 +9,16 @@ import javafx.scene.shape.StrokeType;
 public class BoardCellRectangle extends Rectangle {
     private ShipKind shipKind;
 
-//    public enum State {
-//        EMPTY,
-//        HIT,
-//        HIT_SHIP,
-//        SHIP
-//    }
-
     private Position position;
-    private boolean hit;
+    private boolean marked;
 
     public BoardCellRectangle(BoardPane board, Position position) {
         this.position = position;
+        this.marked = false;
 
         setStrokeWidth(1);
         setStrokeType(StrokeType.INSIDE);
-        mark(null, false);
+        mark(null);
 
         widthProperty().bind(board.widthProperty().divide(10));
         heightProperty().bind(board.heightProperty().divide(10));
@@ -32,29 +26,37 @@ public class BoardCellRectangle extends Rectangle {
         layoutYProperty().bind(board.heightProperty().divide(10).multiply(position.getRow()));
     }
 
-    public void mark(ShipKind shipKind, boolean hit) {
+    public void mark(ShipKind shipKind) {
         this.shipKind = shipKind;
-        this.hit = hit;
 
         if (shipKind == null) {
-            if (hit) {
-                setFill(Color.LIGHTCORAL);
-                setStroke(Color.LIGHTGRAY);
-            }
-            else {
-                setFill(Color.WHITE);
-                setStroke(Color.LIGHTGRAY);
-            }
+            this.marked = false;
+            setFill(Color.WHITE);
+            setStroke(Color.LIGHTGRAY);
         }
         else {
-            if (hit) {
-                setFill(Color.LIGHTCORAL);
-                setStroke(Color.LIGHTCORAL);
+            this.marked = true;
+            setFill(Color.GREEN);
+            setStroke(Color.GREEN);
+        }
+    }
+
+    public void markShoot(ShipKind shipKind, boolean hit) {
+        this.shipKind = shipKind;
+        this.marked = true;
+
+        if (hit) {
+            if (shipKind == null) {
+                setFill(Color.INDIANRED);
+                setStroke(Color.LIGHTGRAY);
             }
             else {
-                setFill(Color.GREEN);
-                setStroke(Color.GREEN);
+                setFill(Color.INDIANRED);
+                setStroke(Color.INDIANRED);
             }
+        } else {
+            setFill(Color.CORNFLOWERBLUE);
+            setStroke(Color.LIGHTGRAY);
         }
     }
 
@@ -62,8 +64,8 @@ public class BoardCellRectangle extends Rectangle {
         return this.shipKind;
     }
 
-    public boolean isHit() {
-        return this.hit;
+    public boolean isMarked() {
+        return this.marked;
     }
 
     public Position getPosition() {
