@@ -7,10 +7,10 @@ plugins {
 group 'cz.zcu.kiv.krysl'
 version '0.1.0'
 
-sourceCompatibility = 11
+sourceCompatibility = 13
 
 javafx {
-    version = '11.0.2'
+    version = '13'
     modules = [ 'javafx.controls']
 }
 
