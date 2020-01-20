@@ -79,7 +79,7 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
         }
 
         this.socket.setSoTimeout(timeoutMillis);
-        this.socket.connect(serverAddress);
+        this.socket.connect(serverAddress, 5000);
 
 
         this.inputStream = socket.getInputStream();

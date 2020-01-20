@@ -17,10 +17,13 @@ import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class App implements IClientDisconnectionHandler{
 
+    private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
     private Stage stage;
     private final LoginScreenPane loginScreen;
     private Client client;
@@ -116,8 +119,13 @@ public class App implements IClientDisconnectionHandler{
             Task<Client> reconnectionTask = new Task<>() {
                 @Override
                 protected Client call() throws Exception {
-                    for (int i = 0; i < 30 && !cancelReconnecting.get(); i++) {
-                        System.out.println(i);
+                    Instant start = Instant.now();
+
+                    while (!cancelReconnecting.get()) {
+                        if (Duration.between(start, Instant.now()).compareTo(RECONNECT_TIMEOUT) >= 0) {
+                            break;
+                        }
+
                         try {
                             return new Client(address, nickname);
                         } catch (ConnectException e) {

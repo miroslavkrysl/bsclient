@@ -66,7 +66,7 @@ public class LoginScreenPane extends BorderPane {
         VBox portVBox = new VBox();
         portVBox.setAlignment(Pos.CENTER);
         Label portLabel = new Label("Port");
-        PortTextField portTextField = new PortTextField(8191);
+        PortTextField portTextField = new PortTextField(10000);
         portTextField.setAlignment(Pos.CENTER);
         portVBox.getChildren().add(portLabel);
         portVBox.getChildren().add(portTextField);
