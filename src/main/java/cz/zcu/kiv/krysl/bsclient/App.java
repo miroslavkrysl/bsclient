@@ -71,6 +71,7 @@ public class App implements IClientDisconnectionHandler{
 
     private void setUp(Client client) {
         this.client = client;
+        client.setDisconnectionHandlerHandler(this);
         RestoreState restoreState = client.getRestoreState();
 
         if (restoreState == null || restoreState.isLobby()) {
@@ -83,7 +84,7 @@ public class App implements IClientDisconnectionHandler{
 
     @Override
     public void handleDisconnected(ConnectionLossCause cause) {
-
+        System.out.println("Disconnected: " + cause.toString());
         InetSocketAddress address = client.getServerAddress();
         Nickname nickname = client.getNickname();
 

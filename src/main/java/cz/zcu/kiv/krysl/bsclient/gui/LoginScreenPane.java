@@ -146,7 +146,6 @@ public class LoginScreenPane extends BorderPane {
                 Client client = (Client) event.getSource().getValue();
 
                 this.app = new App(stage, this, client);
-                client.setDisconnectionHandlerHandler(app);
 
                 RestoreState restoreState = client.getRestoreState();
 
