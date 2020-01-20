@@ -3,6 +3,8 @@ package cz.zcu.kiv.krysl.bsclient.gui;
 import cz.zcu.kiv.krysl.bsclient.App;
 import cz.zcu.kiv.krysl.bsclient.net.client.Client;
 import cz.zcu.kiv.krysl.bsclient.net.types.Nickname;
+import cz.zcu.kiv.krysl.bsclient.net.types.RestoreState;
+import cz.zcu.kiv.krysl.bsclient.net.types.RestoreStateGame;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -145,7 +147,15 @@ public class LoginScreenPane extends BorderPane {
 
                 this.app = new App(stage, this, client);
                 client.setDisconnectionHandlerHandler(app);
-                this.app.goToLobbyScreen();
+
+                RestoreState restoreState = client.getRestoreState();
+
+                if (restoreState == null || restoreState.isLobby()) {
+                    this.app.goToLobbyScreen();
+                }
+                else {
+                    this.app.goToGameScreen((RestoreStateGame) restoreState);
+                }
 
                 connectProgressIndicator.setVisible(false);
                 connectButton.setDisable(false);

@@ -158,6 +158,12 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
                 app.goToLayoutScreen(opponent, false);
             });
 
+            joinGameTask.setOnFailed(event -> {
+                waitingForGame = true;
+                stopWaitingButton.setDisable(true);
+                stopWaitingButton.setVisible(false);
+            });
+
             new Thread(joinGameTask).start();
         });
 
