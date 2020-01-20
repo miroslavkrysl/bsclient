@@ -3,6 +3,7 @@ package cz.zcu.kiv.krysl.bsclient.net.connection;
 import cz.zcu.kiv.krysl.bsclient.net.DeserializeException;
 import cz.zcu.kiv.krysl.bsclient.net.DisconnectedException;
 import cz.zcu.kiv.krysl.bsclient.net.messages.server.ServerMessage;
+import cz.zcu.kiv.krysl.bsclient.net.types.RestoreState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -89,6 +90,15 @@ public class Connection<MessageIn, MessageOut> implements IMessageInputStream<Me
 
         this.buffer = new byte[BUFFER_SIZE];
         this.incomingQueue = new ArrayDeque<>();
+    }
+
+    /**
+     * Get the local network connection socket address.
+     *
+     * @return The socket address.
+     */
+    public InetSocketAddress getLocalAddress() {
+        return new InetSocketAddress(socket.getLocalAddress(), socket.getLocalPort());
     }
 
     /**

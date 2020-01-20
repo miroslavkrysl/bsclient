@@ -24,6 +24,7 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
     private Button logoutButton;
     private ProgressIndicator progressIndicator;
     private Label addressValueLabel;
+    private Label localAddressValueLabel;
     private Label nicknameValueLabel;
     private Button stopWaitingButton;
 
@@ -47,20 +48,31 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
         VBox centerVBox = new VBox();
         centerVBox.setFillWidth(false);
         centerVBox.setAlignment(Pos.CENTER);
-        centerVBox.setSpacing(10);
+        centerVBox.setSpacing(15);
 
         // heading
         Label connectedLabel = new Label("Connected to the server");
-        connectedLabel.setFont(Font.font(null, FontWeight.BOLD, 16));
+        connectedLabel.setFont(Font.font(null, FontWeight.BOLD, 18));
 
-        // address
+        // server address
         HBox addressHBox = new HBox();
         addressHBox.setAlignment(Pos.CENTER);
         addressHBox.setSpacing(10);
         Label addressLabel = new Label("Server address:");
         Label addressValueLabel = new Label();
+        addressValueLabel.setFont(Font.font(null, FontWeight.BOLD, 14));
         addressHBox.getChildren().add(addressLabel);
         addressHBox.getChildren().add(addressValueLabel);
+
+        // local address
+        HBox localAddressHBox = new HBox();
+        localAddressHBox.setAlignment(Pos.CENTER);
+        localAddressHBox.setSpacing(10);
+        Label localAddressLabel = new Label("Local connection address:");
+        Label localAddressValueLabel = new Label();
+        localAddressValueLabel.setFont(Font.font(null, FontWeight.BOLD, 14));
+        localAddressHBox.getChildren().add(localAddressLabel);
+        localAddressHBox.getChildren().add(localAddressValueLabel);
 
         // nickname
         HBox nicknameHBox = new HBox();
@@ -89,6 +101,7 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
         // add all to connectVBox
         centerVBox.getChildren().add(connectedLabel);
         centerVBox.getChildren().add(addressHBox);
+        centerVBox.getChildren().add(localAddressHBox);
         centerVBox.getChildren().add(nicknameHBox);
         centerVBox.getChildren().add(joinGameButton);
         centerVBox.getChildren().add(logoutButton);
@@ -100,6 +113,7 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
 
 
         this.addressValueLabel = addressValueLabel;
+        this.localAddressValueLabel = localAddressValueLabel;
         this.nicknameValueLabel = nicknameValueLabel;
         this.joinGameButton = joinGameButton;
         this.logoutButton = logoutButton;
@@ -109,6 +123,7 @@ public class LobbyScreenPane extends BorderPane implements IClientEventHandler {
 
     private void bindUi() {
         addressValueLabel.setText(app.getClient().getServerAddress().toString());
+        localAddressValueLabel.setText(app.getClient().getLocalAddress().toString());
         nicknameValueLabel.setText(app.getClient().getNickname().getValue());
 
         // --- Logout button ---

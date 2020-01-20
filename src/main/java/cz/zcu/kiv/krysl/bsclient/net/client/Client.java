@@ -38,7 +38,6 @@ public class Client {
 
     private final Connection<ServerMessage, ClientMessage> connection;
 
-    private final AtomicBoolean expectingResponse;
     private final ReentrantLock requestLock;
     private final BlockingQueue<Response> responseBox;
 
@@ -53,7 +52,6 @@ public class Client {
         this.eventHandler = null;
         this.disconnectionHandler = null;
         this.serverAddress = serverAddress;
-        this.expectingResponse = new AtomicBoolean(false);
         this.requestLock = new ReentrantLock();
         this.responseBox = new SynchronousQueue<>();
         this.disconnected = new AtomicBoolean(false);
@@ -116,6 +114,10 @@ public class Client {
 
     public InetSocketAddress getServerAddress() {
         return this.serverAddress;
+    }
+
+    public InetSocketAddress getLocalAddress() {
+        return this.connection.getLocalAddress();
     }
 
     public Nickname getNickname() {

@@ -36,7 +36,7 @@ public class BoardPane extends Pane {
     protected void clear() {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                cells[i][j].mark(null);
+                cells[i][j].unMark();
             }
         }
     }
@@ -85,12 +85,7 @@ public class BoardPane extends Pane {
                 continue;
             }
 
-            if (sunk) {
-                this.cells[row][col].markShoot(shipKind, true);
-            }
-            else {
-                this.cells[row][col].mark(shipKind);
-            }
+            this.cells[row][col].markShip(shipKind, sunk);
 
             row += incR;
             col += incC;

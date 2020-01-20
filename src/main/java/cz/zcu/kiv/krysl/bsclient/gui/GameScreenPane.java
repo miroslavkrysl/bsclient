@@ -9,8 +9,10 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -25,10 +27,10 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
     private App app;
     private Nickname opponent;
     private BooleanProperty onTurn;
-    private Layout layout;
     private Label onTurnOpponentLabel;
     private Label onTurnPlayerLabel;
     private Label opponentOfflineLabel;
+    private Button leaveGameButton;
 
     public GameScreenPane(App app, Nickname opponent, Layout layout, boolean onTurn) {
         this.app = app;
@@ -53,16 +55,28 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
 
         this.playerBoard.markShips(restoreState.getLayout().getPlacements(), false);
 
-        for (Position position : restoreState.getPlayerBoard().getPositions()) {
+        // mark misses on player board
+        for (Position position : restoreState.getPlayerBoardHits().getPositions()) {
             BoardCellRectangle cell = playerBoard.getCell(position);
-
-            ShipKind kind = cell.getShipKind();
-            cell.markShoot(kind, true);
+            cell.markShoot(true);
         }
 
-        for (Position position : restoreState.getOpponentBoard().getPositions()) {
+        // mark hits on player board
+        for (Position position : restoreState.getPlayerBoardMisses().getPositions()) {
+            BoardCellRectangle cell = playerBoard.getCell(position);
+            cell.markShoot(false);
+        }
+
+        // mark opponent board hits
+        for (Position position : restoreState.getOpponentBoardHits().getPositions()) {
             BoardCellRectangle cell = opponentBoard.getCell(position);
-            cell.markShoot(null, true);
+            cell.markShoot(true);
+        }
+
+        // mark opponent board misses
+        for (Position position : restoreState.getOpponentBoardMisses().getPositions()) {
+            BoardCellRectangle cell = opponentBoard.getCell(position);
+            cell.markShoot(false);
         }
 
         this.opponentBoard.markShips(restoreState.getSunkShips().getPlacements(), true);
@@ -95,17 +109,26 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
         opponentBox.setSpacing(10);
         opponentBox.setAlignment(Pos.CENTER);
 
-        HBox boardsHBox = new HBox(playerBox, opponentBox);
-        boardsHBox.setSpacing(30);
-        boardsHBox.setAlignment(Pos.CENTER);
+        Button leaveGameButton = new Button("Leave game");
+        HBox buttonBox = new HBox(leaveGameButton);
+        buttonBox.setAlignment(Pos.CENTER);
 
-        setCenter(boardsHBox);
+        HBox boardsBox = new HBox(playerBox, opponentBox);
+        boardsBox.setSpacing(30);
+        boardsBox.setAlignment(Pos.CENTER);
+
+        VBox centerBox = new VBox(boardsBox, buttonBox);
+        centerBox.setSpacing(10);
+        centerBox.setAlignment(Pos.CENTER);
+
+        setCenter(centerBox);
 
         this.playerBoard = playerBoard;
         this.opponentBoard = opponentBoard;
         this.onTurnPlayerLabel = onTurnPlayerLabel;
         this.onTurnOpponentLabel = onTurnOpponentLabel;
         this.opponentOfflineLabel = opponentOfflineLabel;
+        this.leaveGameButton = leaveGameButton;
     }
 
     private void bindUi() {
@@ -137,7 +160,7 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
                         ShootResult result = (ShootResult) event.getSource().getValue();
 
                         if (result.isHit()) {
-                            clickedCell.markShoot(null, true);
+                            clickedCell.markShoot(true);
                         }
                         else if (result.isSunk()) {
                             ShootResultSunk resultSunk = (ShootResultSunk) result;
@@ -145,7 +168,7 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
                         }
                         else {
                             onTurn.set(false);
-                            clickedCell.markShoot(null, false);
+                            clickedCell.markShoot(false);
                         }
                     });
 
@@ -153,6 +176,28 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
                 });
             }
         }
+
+        this.leaveGameButton.setOnAction(e -> {
+            Task<Void> leaveGameTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    app.getClient().leaveGame();
+                    return null;
+                }
+            };
+
+            leaveGameButton.setDisable(true);
+
+            leaveGameTask.setOnSucceeded(event -> {
+                app.goToLobbyScreen();
+            });
+
+            leaveGameTask.setOnFailed(event -> {
+                leaveGameButton.setDisable(false);
+            });
+
+            new Thread(leaveGameTask).start();
+        });
     }
 
     @Override
@@ -189,7 +234,7 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
     @Override
     public void handleOpponentMissed(Position position) {
         Platform.runLater(() -> {
-            playerBoard.getCell(position).markShoot(null, false);
+            playerBoard.getCell(position).markShoot(false);
             onTurn.set(true);
         });
     }
@@ -197,8 +242,7 @@ public class GameScreenPane extends BorderPane implements IClientEventHandler {
     @Override
     public void handleOpponentHit(Position position) {
         Platform.runLater(() -> {
-            BoardCellRectangle cell = playerBoard.getCell(position);
-            cell.markShoot(cell.getShipKind(), true);
+            playerBoard.getCell(position).markShoot(true);
         });
     }
 

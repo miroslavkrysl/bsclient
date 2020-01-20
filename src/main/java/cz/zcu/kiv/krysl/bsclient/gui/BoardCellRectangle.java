@@ -14,11 +14,10 @@ public class BoardCellRectangle extends Rectangle {
 
     public BoardCellRectangle(BoardPane board, Position position) {
         this.position = position;
-        this.marked = false;
 
         setStrokeWidth(1);
         setStrokeType(StrokeType.INSIDE);
-        mark(null);
+        unMark();
 
         widthProperty().bind(board.widthProperty().divide(10));
         heightProperty().bind(board.heightProperty().divide(10));
@@ -26,37 +25,38 @@ public class BoardCellRectangle extends Rectangle {
         layoutYProperty().bind(board.heightProperty().divide(10).multiply(position.getRow()));
     }
 
-    public void mark(ShipKind shipKind) {
-        this.shipKind = shipKind;
+    public void unMark() {
+        this.marked = false;
+        this.shipKind = null;
 
-        if (shipKind == null) {
-            this.marked = false;
-            setFill(Color.WHITE);
-            setStroke(Color.LIGHTGRAY);
-        }
-        else {
-            this.marked = true;
-            setFill(Color.GREEN);
-            setStroke(Color.GREEN);
-        }
+        setFill(Color.WHITE);
+        setStroke(Color.LIGHTGRAY);
     }
 
-    public void markShoot(ShipKind shipKind, boolean hit) {
-        this.shipKind = shipKind;
+    public void markShoot(boolean hit) {
         this.marked = true;
+        this.shipKind = null;
 
         if (hit) {
-            if (shipKind == null) {
-                setFill(Color.INDIANRED);
-                setStroke(Color.LIGHTGRAY);
-            }
-            else {
-                setFill(Color.INDIANRED);
-                setStroke(Color.INDIANRED);
-            }
+            setFill(Color.INDIANRED);
+            setStroke(Color.LIGHTGRAY);
         } else {
             setFill(Color.CORNFLOWERBLUE);
             setStroke(Color.LIGHTGRAY);
+        }
+    }
+
+    public void markShip(ShipKind shipKind, boolean sunk) {
+        this.shipKind = shipKind;
+        this.marked = true;
+
+        if (sunk) {
+            setFill(Color.INDIANRED);
+            setStroke(Color.INDIANRED);
+        }
+        else {
+            setFill(Color.GREEN);
+            setStroke(Color.GREEN);
         }
     }
 
