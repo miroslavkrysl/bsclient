@@ -7,16 +7,16 @@ plugins {
 group 'cz.zcu.kiv.krysl'
 version '0.1.0'
 
-sourceCompatibility = 13
+sourceCompatibility = 11
 
 javafx {
-    version = '13'
+    version = '11.0.2'
     modules = [ 'javafx.controls']
 }
 
 jlink {
     launcher {
-        name = 'hellofx'
+        name = 'bsclient'
     }
     forceMerge('log4j-api')
 }
