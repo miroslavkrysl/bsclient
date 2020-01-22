@@ -26,6 +26,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * An interface for communication with the Battleships server.
+ */
 public class Client {
     private static Logger logger = LogManager.getLogger(Client.class);
 
@@ -47,6 +50,13 @@ public class Client {
     private final RestoreState restoreState;
     private Nickname nickname;
 
+    /**
+     * Connect to the server with given nickname.
+     *
+     * @param serverAddress The address of the server.
+     * @param nickname The nickname to use for login.
+     * @throws ConnectException Whe an error occurs while connecting or logging in.
+     */
     public Client(InetSocketAddress serverAddress, Nickname nickname) throws ConnectException {
         this.nickname = nickname;
         this.eventHandler = null;
@@ -100,30 +110,65 @@ public class Client {
         }
     }
 
+    /**
+     * Get the state of the session after restoration.
+     *
+     * @return The state of the session or null if the session is new.
+     */
     public RestoreState getRestoreState() {
         return restoreState;
     }
 
+    /**
+     * Set the event handler which will be called if some event happens.
+     *
+     * @param eventHandler The handler to set.
+     */
     public void setEventHandler(IClientEventHandler eventHandler) {
         this.eventHandler = eventHandler;
     }
 
+    /**
+     * Set the disconnection handler which will be called if such event happens.
+     *
+     * @param disconnectionHandler The handler to set.
+     */
     public void setDisconnectionHandlerHandler(IClientDisconnectionHandler disconnectionHandler) {
         this.disconnectionHandler = disconnectionHandler;
     }
 
+    /**
+     * Get the server address.
+     *
+     * @return The server address.
+     */
     public InetSocketAddress getServerAddress() {
         return this.serverAddress;
     }
 
+    /**
+     * Get the clients local address.
+     *
+     * @return The local address.
+     */
     public InetSocketAddress getLocalAddress() {
         return this.connection.getLocalAddress();
     }
 
+    /**
+     * Get the players nickname.
+     *
+     * @return The players nickname.
+     */
     public Nickname getNickname() {
         return this.nickname;
     }
 
+    /**
+     * Run the receiving loop.
+     *
+     * Continuously receives messages from the server and process them.
+     */
     private void runReceiving() {
         logger.info("starting client receiver thread");
         Instant lastReceived = Instant.now();

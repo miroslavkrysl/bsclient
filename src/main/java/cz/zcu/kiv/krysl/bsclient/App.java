@@ -21,6 +21,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * A class that handles window switching and reconnecting logic.
+ */
 public class App implements IClientDisconnectionHandler{
 
     private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
@@ -28,6 +31,13 @@ public class App implements IClientDisconnectionHandler{
     private final LoginScreenPane loginScreen;
     private Client client;
 
+    /**
+     * Create a new App.
+     *
+     * @param stage The main application stage.
+     * @param loginScreen The initial login screen.
+     * @param client The initial client.
+     */
     public App(Stage stage, LoginScreenPane loginScreen, Client client) {
         this.stage = stage;
         this.loginScreen = loginScreen;
@@ -44,31 +54,64 @@ public class App implements IClientDisconnectionHandler{
         });
     }
 
+    /**
+     * Get the current client instance.
+     *
+     * @return The client.
+     */
     public Client getClient() {
         return this.client;
     }
 
+    /**
+     * Switch main stage to the login screen.
+     */
     public void goToLoginScreen() {
         stage.getScene().setRoot(loginScreen);
     }
 
+    /**
+     * Switch main stage to the lobby screen.
+     */
     public void goToLobbyScreen() {
         stage.getScene().setRoot(new LobbyScreenPane(this));
     }
 
+    /**
+     * Switch main stage to the layout screen.
+     *
+     * @param opponent The opponent nickname.
+     * @param onTurn Information about who is on turn.
+     */
     public void goToLayoutScreen(Nickname opponent, boolean onTurn) {
         stage.getScene().setRoot(new LayoutScreenPane(this, opponent, onTurn));
     }
 
+    /**
+     * Switch main stage to the game screen after selecting layout.
+     *
+     * @param opponent The opponent nickname.
+     * @param layout Chosen layout.
+     * @param onTurn Information about who is on turn.
+     */
     public void goToGameScreen(Nickname opponent, Layout layout, boolean onTurn) {
         stage.getScene().setRoot(new GameScreenPane(this, opponent, layout, onTurn));
     }
 
+    /**
+     * Switch main stage to the game screen after session restoration.
+     *
+     * @param restoreState The state of the game after restoration.
+     */
     public void goToGameScreen(RestoreStateGame restoreState) {
         stage.getScene().setRoot(new GameScreenPane(this, restoreState));
     }
 
-
+    /**
+     * Set the client and set self as a clients disconnection handler.
+     *
+     * @param client The client to configure with.
+     */
     private void setUp(Client client) {
         this.client = client;
         client.setDisconnectionHandlerHandler(this);

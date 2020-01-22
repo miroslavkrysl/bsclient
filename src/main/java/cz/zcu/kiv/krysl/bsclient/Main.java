@@ -6,6 +6,9 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ * Main class of the application.
+ */
 public class Main extends Application {
 
     private Client client;

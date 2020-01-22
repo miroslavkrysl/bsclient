@@ -3,7 +3,18 @@ package cz.zcu.kiv.krysl.bsclient.util;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A helper class containing some string processing logic.
+ */
 public class Helper {
+    /**
+     * Split char sequence into tokens.
+     *
+     * @param string The string to split.
+     * @param separator The separator used for splitting.
+     * @param escape The escape character that determines whether to use the following separator.
+     * @return List of tokens.
+     */
     public static List<String> splitCharSequence(CharSequence string, char separator, char escape) {
         ArrayList<String> tokens = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
@@ -64,6 +75,14 @@ public class Helper {
         return -1;
     }
 
+    /**
+     * Unescape escaped characters in a string.
+     *
+     * @param string String to unescape.
+     * @param chars Characters to unescape.
+     * @param escape The escape character.
+     * @return Unescaped string.
+     */
     public static String unescapeChars(CharSequence string, CharSequence chars, char escape) {
         StringBuilder sb = new StringBuilder();
 
@@ -101,6 +120,14 @@ public class Helper {
         return sb.toString();
     }
 
+    /**
+     * Escape characters in a string.
+     *
+     * @param string String to escape.
+     * @param chars Characters to escape.
+     * @param escape The escape character.
+     * @return Escaped string.
+     */
     public static String escapeChars(CharSequence string, CharSequence chars, char escape) {
         StringBuilder sb = new StringBuilder();
 
